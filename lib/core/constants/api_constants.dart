@@ -27,6 +27,10 @@ class ApiConstants {
   static String userFollowing(int id) => '/users/$id/following';
   static String follow(int id) => '/users/$id/follow';
 
+  // Search / users list
+  static const String search = '/search';
+  static const String users = '/users';
+
   // Admin
   static const String adminDashboard = '/admin/dashboard';
   static const String adminUsers = '/admin/users';
