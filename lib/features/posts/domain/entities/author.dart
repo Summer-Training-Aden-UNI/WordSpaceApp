@@ -1,23 +1,31 @@
 import 'package:equatable/equatable.dart';
 
-/// The author of a post (the `author` object inside a post).
+/// The person who wrote a post, as shown on feed cards.
 class Author extends Equatable {
-  final int id;
-  final String name;
-  final String? username;
-  final String? avatarUrl;
-
-  /// null when the request was sent without a token.
-  final bool? isFollowing;
-
   const Author({
     required this.id,
     required this.name,
-    this.username,
+    this.headline,
     this.avatarUrl,
-    this.isFollowing,
+    this.isFollowing = false,
   });
 
+  final String id;
+  final String name;
+
+  /// Short role line under the name, e.g. "Lead Architect". Optional.
+  final String? headline;
+  final String? avatarUrl;
+  final bool isFollowing;
+
+  Author copyWith({bool? isFollowing}) => Author(
+        id: id,
+        name: name,
+        headline: headline,
+        avatarUrl: avatarUrl,
+        isFollowing: isFollowing ?? this.isFollowing,
+      );
+
   @override
-  List<Object?> get props => [id, name, username, avatarUrl, isFollowing];
+  List<Object?> get props => [id, name, headline, avatarUrl, isFollowing];
 }

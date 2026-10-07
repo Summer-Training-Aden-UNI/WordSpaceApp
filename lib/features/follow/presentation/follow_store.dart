@@ -15,12 +15,14 @@ class FollowStore extends ChangeNotifier {
   final FollowUser _follow;
   final UnfollowUser _unfollow;
 
-  FollowStore({required FollowUser followUser, required UnfollowUser unfollowUser})
-      : _follow = followUser,
-        _unfollow = unfollowUser;
+  FollowStore({
+    required FollowUser followUser,
+    required UnfollowUser unfollowUser,
+  }) : _follow = followUser,
+       _unfollow = unfollowUser;
 
-  final Map<int, bool> _following = {};
-  final Map<int, int> _followers = {};
+  final Map<String, bool> _following = {};
+  final Map<String, int> _followers = {};
 
   /// Call after EVERY fetch of posts (first load, refresh, next page) so the
   /// server stays the source of truth.
@@ -39,14 +41,14 @@ class FollowStore extends ChangeNotifier {
     notifyListeners();
   }
 
-  bool isFollowing(int userId) => _following[userId] ?? false;
+  bool isFollowing(String userId) => _following[userId] ?? false;
 
   /// Latest followers_count returned by the server for this user, if any.
-  int? followersCount(int userId) => _followers[userId];
+  int? followersCount(String userId) => _followers[userId];
 
   /// Optimistic toggle. Returns null on success, or the [Failure] after
   /// reverting (show a snackbar; on AuthFailure go to the login page).
-  Future<Failure?> toggle(int userId) async {
+  Future<Failure?> toggle(String userId) async {
     final before = isFollowing(userId);
     _following[userId] = !before;
     notifyListeners();
