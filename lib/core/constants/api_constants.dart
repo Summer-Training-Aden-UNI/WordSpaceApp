@@ -1,12 +1,17 @@
 class ApiConstants {
-  // Android emulator -> your PC. For a real phone use your PC's LAN IP.
-  static const String baseUrl = 'http://10.0.2.2:8000/api';
+  // Your Laravel server on the LAN. Use http://10.0.2.2:8000/api for the
+  // Android emulator. Change the IP if your PC's address changes.
+  static const String baseUrl = 'http://192.168.0.70:8000/api';
 
   // Auth
   static const String register = '/register';
   static const String login = '/login';
   static const String logout = '/logout';
   static const String user = '/user';
+
+  // Search / users list
+  static const String search = '/search';
+  static const String users = '/users';
 
   // Posts
   static const String posts = '/posts';
@@ -27,12 +32,5 @@ class ApiConstants {
   static String userFollowing(int id) => '/users/$id/following';
   static String follow(int id) => '/users/$id/follow';
 
-  // Search / users list
-  static const String search = '/search';
-  static const String users = '/users';
-
-  // Admin
-  static const String adminDashboard = '/admin/dashboard';
-  static const String adminUsers = '/admin/users';
-  static String adminUser(int id) => '/admin/users/$id';
+ 
 }

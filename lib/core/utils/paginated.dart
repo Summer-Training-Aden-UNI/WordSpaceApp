@@ -32,6 +32,21 @@ class Paginated<T> extends Equatable {
     );
   }
 
+  /// Accepts either a paginated object ({data, meta}) or a plain JSON list.
+  factory Paginated.fromResponse(
+    dynamic body,
+    T Function(Map<String, dynamic>) fromItem,
+  ) {
+    if (body is List) {
+      return Paginated<T>(
+        items: body.map((e) => fromItem(e as Map<String, dynamic>)).toList(),
+        currentPage: 1,
+        lastPage: 1,
+      );
+    }
+    return Paginated.fromJson(body as Map<String, dynamic>, fromItem);
+  }
+
   @override
   List<Object?> get props => [items, currentPage, lastPage];
 }
