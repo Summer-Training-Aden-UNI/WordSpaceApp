@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 
-import '../theme/app_colors.dart';
-import '../theme/app_fonts.dart';
+import '../../theme/app_colors.dart';
+import '../../theme/app_fonts.dart';
 
 /// Compact pill button that toggles between **+ Follow** and **✓ Following**.
 ///

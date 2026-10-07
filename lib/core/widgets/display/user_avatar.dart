@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 
-import '../theme/app_colors.dart';
-import '../theme/app_fonts.dart';
+import '../../theme/app_colors.dart';
+import '../../theme/app_fonts.dart';
 
 /// Circular avatar: shows the network image, or the user's first letter
 /// while loading / when there is no image / when loading fails.

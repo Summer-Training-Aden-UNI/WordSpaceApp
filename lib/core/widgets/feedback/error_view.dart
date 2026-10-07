@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 
-import '../theme/app_colors.dart';
-import '../theme/app_fonts.dart';
-import 'app_button.dart';
+import '../../theme/app_colors.dart';
+import '../../theme/app_fonts.dart';
+import '../buttons/app_button.dart';
 
 /// Full-area error state with an optional retry button.
 /// Pass `failure.message` from your domain layer as [message].

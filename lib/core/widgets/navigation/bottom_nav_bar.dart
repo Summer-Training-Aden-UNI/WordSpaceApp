@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 
-import '../theme/app_colors.dart';
-import '../theme/app_fonts.dart';
+import '../../theme/app_colors.dart';
+import '../../theme/app_fonts.dart';
 
 /// The five destinations shown in the bottom bar.
 enum NavTab { home, favorites, create, search, profile }

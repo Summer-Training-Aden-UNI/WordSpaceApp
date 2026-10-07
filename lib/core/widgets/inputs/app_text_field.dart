@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-import '../theme/app_colors.dart';
+import '../../theme/app_colors.dart';
 
 /// Shared text field. Fill, borders and label styles come from
 /// [AppTheme] (inputDecorationTheme). Adds the design's soft focus glow
