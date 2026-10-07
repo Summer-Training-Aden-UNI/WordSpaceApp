@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import 'core/theme/app_colors.dart';
+import 'core/theme/app_theme.dart';
 import 'injection_container.dart' as di;
 
 Future<void> main() async {
@@ -9,3 +11,4 @@ Future<void> main() async {
     home: Scaffold(body: Center(child: Text('wordspace'))),
   ));
 }
+
