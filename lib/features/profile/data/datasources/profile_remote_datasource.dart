@@ -35,8 +35,8 @@ class ProfileRemoteDataSourceImpl implements ProfileRemoteDataSource {
   }) async {
     final fields = <String, dynamic>{
       'name': name,
-      if (username != null) 'username': username,
-      if (bio != null) 'bio': bio,
+      'username': ?username,
+      'bio': ?bio,
     };
     final Response res;
     if (avatarPath != null) {

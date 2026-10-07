@@ -147,7 +147,7 @@ class AppTopBar extends StatelessWidget implements PreferredSizeWidget {
           ],
         ),
         const Spacer(),
-        if (right != null) right,
+        ?right,
       ],
     );
   }
@@ -201,8 +201,8 @@ class AppTopBar extends StatelessWidget implements PreferredSizeWidget {
             width: 48,
             child: Align(alignment: Alignment.centerRight, child: right),
           )
-        else if (right != null)
-          right,
+        else
+         ?right,
       ],
     );
   }
