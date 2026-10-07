@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-import '../theme/app_colors.dart';
+import '../../theme/app_colors.dart';
 
 /// Centered brand-colored spinner for full-screen / list loading states.
 class LoadingIndicator extends StatelessWidget {

@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 
-import '../theme/app_colors.dart';
-import '../theme/app_fonts.dart';
-import 'app_button.dart';
+import '../../theme/app_colors.dart';
+import '../../theme/app_fonts.dart';
+import '../buttons/app_button.dart';
 
 /// Placeholder for lists with no data (no posts, no comments, no results...).
 class EmptyState extends StatelessWidget {

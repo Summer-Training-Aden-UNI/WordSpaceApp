@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 
-import '../theme/app_colors.dart';
-import '../theme/app_fonts.dart';
+import '../../theme/app_colors.dart';
+import '../../theme/app_fonts.dart';
 
 /// One place for toast-style messages.
 ///   AppSnackBar.show(context, 'Post created');
