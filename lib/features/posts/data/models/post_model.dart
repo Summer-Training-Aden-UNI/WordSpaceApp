@@ -4,33 +4,55 @@ import 'author_model.dart';
 class PostModel extends Post {
   const PostModel({
     required super.id,
+    required super.author,
     required super.title,
-    required super.body,
-    super.imageUrl,
-    super.status,
-    super.author,
-    required super.commentsCount,
-    required super.likesCount,
+    required super.excerpt,
+    required super.publishedAt,
+    required super.readTimeMinutes,
+    required super.likeCount,
+    required super.commentCount,
+    super.coverImageUrl,
+    super.tag,
+    super.isFeatured,
     super.isLiked,
-    super.createdAt,
   });
 
-  // NOTE: title/body/image field names are still guesses (see the guide).
-  // `author`, `is_following` and `liked_by_user` come from the backend patch.
   factory PostModel.fromJson(Map<String, dynamic> json) {
-    final a = json['author'] ?? json['user'];
+    final authorJson = json['author'] ?? json['user'];
+    if (authorJson is! Map<String, dynamic>) {
+      throw const FormatException(
+        'Post response must include an author object.',
+      );
+    }
+
+    final publishedAtValue =
+        json['published_at'] ?? json['created_at'] ?? json['publishedAt'];
+    final publishedAt = DateTime.tryParse(publishedAtValue?.toString() ?? '');
+    if (publishedAt == null) {
+      throw const FormatException(
+        'Post response must include a valid publish date.',
+      );
+    }
+
+    final excerpt =
+        (json['excerpt'] ?? json['body'] ?? json['content'])?.toString() ?? '';
     return PostModel(
-      id: (json['id'] as num).toInt(),
+      id: json['id'].toString(),
+      author: AuthorModel.fromJson(authorJson),
       title: json['title']?.toString() ?? '',
-      body: (json['body'] ?? json['content'] ?? json['excerpt'])?.toString() ?? '',
-      imageUrl:
-          (json['image_url'] ?? json['image'] ?? json['cover_image'])?.toString(),
-      status: json['status']?.toString(),
-      author: a is Map<String, dynamic> ? AuthorModel.fromJson(a) : null,
-      commentsCount: (json['comments_count'] as num?)?.toInt() ?? 0,
-      likesCount: (json['likes_count'] as num?)?.toInt() ?? 0,
-      isLiked: (json['liked_by_user'] ?? json['is_liked']) as bool?,
-      createdAt: json['created_at']?.toString(),
+      excerpt: excerpt,
+      publishedAt: publishedAt,
+      readTimeMinutes: (json['read_time_minutes'] as num?)?.toInt() ?? 1,
+      likeCount:
+          (json['like_count'] ?? json['likes_count'] as num?)?.toInt() ?? 0,
+      commentCount:
+          (json['comment_count'] ?? json['comments_count'] as num?)?.toInt() ??
+          0,
+      coverImageUrl: (json['image_url'] ?? json['image'] ?? json['cover_image'])
+          ?.toString(),
+      tag: json['tag']?.toString(),
+      isFeatured: json['is_featured'] as bool? ?? false,
+      isLiked: (json['liked_by_user'] ?? json['is_liked']) as bool? ?? false,
     );
   }
 }
