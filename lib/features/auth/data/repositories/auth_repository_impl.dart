@@ -25,19 +25,20 @@ class AuthRepositoryImpl implements AuthRepository {
   Future<Either<Failure, User>> register({
     required String name,
     required String email,
+    required String username,
     required String password,
     required String passwordConfirmation,
-  }) =>
-      safeCall(() async {
-        final result = await remote.register(
-          name: name,
-          email: email,
-          password: password,
-          passwordConfirmation: passwordConfirmation,
-        );
-        await tokenStorage.save(result.token);
-        return result.user;
-      });
+  }) => safeCall(() async {
+    final result = await remote.register(
+      name: name,
+      email: email,
+      username: username,
+      password: password,
+      passwordConfirmation: passwordConfirmation,
+    );
+    await tokenStorage.save(result.token);
+    return result.user;
+  });
 
   @override
   Future<Either<Failure, Unit>> logout() async {

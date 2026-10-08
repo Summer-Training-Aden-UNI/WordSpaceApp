@@ -18,7 +18,7 @@ class AppButton extends StatelessWidget {
     this.variant = AppButtonVariant.primary,
     this.icon,
     this.isLoading = false,
-    this.fullWidth = true,
+    this.fullWidth = true, required IconData trailingIcon,
   });
 
   final String label;

@@ -1,15 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
-         // login/register (authErrorMessage)
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_fonts.dart';
-import '../../../../core/widgets/widgets.dart';          // AppButton, AppTextField, AppSnackBar
-// NOT exported by widgets.dart
+import '../../../../core/widgets/widgets.dart'; // AppButton, AppButtonVariant
 import '../cubit/auth_cubit.dart';
 import 'login.dart';
 import 'register.dart';
-
 
 class WelcomePage extends StatelessWidget {
   const WelcomePage({super.key});
@@ -31,14 +28,27 @@ class WelcomePage extends StatelessWidget {
                   borderRadius: BorderRadius.circular(18),
                 ),
                 child: Center(
-                  child: Text('W', style: AppFonts.headlineXl(color: AppColors.onPrimary)),
+                  child: Text(
+                    'W',
+                    style: AppFonts.headlineXl(color: AppColors.onPrimary),
+                  ),
                 ),
               ),
               const SizedBox(height: 20),
-              Text.rich(TextSpan(children: [
-                TextSpan(text: 'Word', style: AppFonts.headlineXl(color: AppColors.slate)),
-                TextSpan(text: 'Space', style: AppFonts.headlineXl(color: AppColors.brandEmerald)),
-              ])),
+              Text.rich(
+                TextSpan(
+                  children: [
+                    TextSpan(
+                      text: 'Word',
+                      style: AppFonts.headlineXl(color: AppColors.slate),
+                    ),
+                    TextSpan(
+                      text: 'Space',
+                      style: AppFonts.headlineXl(color: AppColors.brandEmerald),
+                    ),
+                  ],
+                ),
+              ),
               const SizedBox(height: 8),
               Text(
                 'Read, write and follow the people you like.',
@@ -48,6 +58,7 @@ class WelcomePage extends StatelessWidget {
               const Spacer(flex: 3),
               AppButton(
                 label: 'Log in',
+                trailingIcon: Icons.arrow_forward_rounded,
                 onPressed: () => Navigator.of(context)
                     .push(MaterialPageRoute(builder: (_) => const LoginPage())),
               ),
@@ -55,14 +66,18 @@ class WelcomePage extends StatelessWidget {
               AppButton(
                 label: 'Create account',
                 variant: AppButtonVariant.outlined,
-                onPressed: () => Navigator.of(context)
-                    .push(MaterialPageRoute(builder: (_) => const RegisterPage())),
+                trailingIcon: Icons.arrow_forward_rounded,
+                onPressed: () => Navigator.of(
+                  context,
+                ).push(MaterialPageRoute(builder: (_) => const RegisterPage())),
               ),
               const SizedBox(height: 8),
               TextButton(
                 onPressed: () => context.read<AuthCubit>().continueAsGuest(),
-                child: Text('Continue as guest',
-                    style: AppFonts.labelLg(color: AppColors.slateMuted)),
+                child: Text(
+                  'Continue as guest',
+                  style: AppFonts.labelLg(color: AppColors.slateMuted),
+                ),
               ),
               const SizedBox(height: 16),
             ],
