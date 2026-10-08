@@ -7,22 +7,20 @@ import '../../domain/entities/author.dart';
 import '../utils/time_ago.dart';
 
 /// Top row of a post card:
-/// avatar · name + "role · 14d ago" · [FEATURED badge] · Follow button.
+/// avatar · name + "role · 14d ago" · [FEATURED badge].
+///
+/// The Follow button is added back once FollowStore is keyed by int.
 class PostAuthorHeader extends StatelessWidget {
   const PostAuthorHeader({
     super.key,
     required this.author,
     required this.publishedAt,
     required this.isFeatured,
-    required this.isFollowLoading,
-    required this.onFollowTap,
   });
 
   final Author author;
   final DateTime publishedAt;
   final bool isFeatured;
-  final bool isFollowLoading;
-  final VoidCallback onFollowTap;
 
   String get _subtitle {
     final time = timeAgo(publishedAt);
@@ -63,12 +61,6 @@ class PostAuthorHeader extends StatelessWidget {
           const SizedBox(width: 8),
           const _FeaturedBadge(),
         ],
-        const SizedBox(width: 8),
-        FollowButton(
-          isFollowing: author.isFollowing,
-          isLoading: isFollowLoading,
-          onPressed: onFollowTap,
-        ),
       ],
     );
   }

@@ -35,7 +35,7 @@ class FollowStore extends ChangeNotifier {
 
   /// Call after GetUser (profile page) to seed the state and the counter.
   void seedUser(UserDetails details) {
-    final id = details.user.id;
+    final id = details.user.id.toString();
     if (details.isFollowing != null) _following[id] = details.isFollowing!;
     _followers[id] = details.followersCount;
     notifyListeners();
@@ -53,9 +53,10 @@ class FollowStore extends ChangeNotifier {
     _following[userId] = !before;
     notifyListeners();
 
+    final userIdInt = int.parse(userId);
     final result = before
-        ? await _unfollow(UnfollowUserParams(userId: userId))
-        : await _follow(FollowUserParams(userId: userId));
+        ? await _unfollow(UnfollowUserParams(userId: userIdInt))
+        : await _follow(FollowUserParams(userId: userIdInt));
 
     Failure? error;
     result.fold(

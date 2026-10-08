@@ -54,30 +54,32 @@ class HomePage extends StatelessWidget {
             AppSnackBar.error(context, state.actionError!);
           }
         },
-        builder: (context, state) => switch (state) {
-          PostsInitial() || PostsLoading() => const LoadingIndicator(),
-          PostsError(:final message) => ErrorView(
-              message: message,
-              onRetry: cubit.loadPosts,
-            ),
-          PostsLoaded(:final posts, :final followInProgress) => posts.isEmpty
-              ? EmptyState(
-                  title: 'No posts yet',
-                  message: 'New posts will show up here.',
-                  icon: Icons.article_outlined,
-                  actionLabel: 'Refresh',
-                  onAction: cubit.loadPosts,
-                )
-              : PostsFeedList(
-                  posts: posts,
-                  followInProgress: followInProgress,
-                  onRefresh: cubit.refresh,
-                  onLikeTap: (post) => cubit.toggleLike(post.id),
-                  onFollowTap: (post) => cubit.toggleFollow(post.author.id),
-                  onPostTap: onPostTap,
-                  onCommentTap: onCommentsTap,
-                ),
-        },
+       builder: (context, state) => switch (state) {
+  PostsInitial() || PostsLoading() => const LoadingIndicator(),
+  PostsError(:final message) => ErrorView(
+      message: message,
+      onRetry: cubit.loadPosts,
+    ),
+  PostsLoaded(:final posts, :final hasMore, :final isLoadingMore) =>
+    posts.isEmpty
+        ? EmptyState(
+            title: 'No posts yet',
+            message: 'New posts will show up here.',
+            icon: Icons.article_outlined,
+            actionLabel: 'Refresh',
+            onAction: cubit.loadPosts,
+          )
+        : PostsFeedList(
+            posts: posts,
+            hasMore: hasMore,
+            isLoadingMore: isLoadingMore,
+            onRefresh: cubit.refresh,
+            onLoadMore: cubit.loadMore,
+            onLikeTap: (post) => cubit.toggleLike(post.id),
+            onPostTap: onPostTap,
+            onCommentTap: onCommentsTap,
+          ),
+},
       ),
       bottomNavigationBar: BottomNavBar(
         currentTab: NavTab.home,

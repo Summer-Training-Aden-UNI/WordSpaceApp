@@ -5,54 +5,92 @@ import '../../domain/entities/post.dart';
 import 'feed_end_indicator.dart';
 import 'post_card.dart';
 
-/// Scrollable, pull-to-refresh list of [PostCard]s with the end-of-feed footer.
-/// Pure UI: all actions come in as callbacks.
-class PostsFeedList extends StatelessWidget {
+class PostsFeedList extends StatefulWidget {
   const PostsFeedList({
     super.key,
     required this.posts,
-    required this.followInProgress,
+    required this.hasMore,
+    required this.isLoadingMore,
     required this.onRefresh,
+    required this.onLoadMore,
     required this.onLikeTap,
-    required this.onFollowTap,
     this.onPostTap,
     this.onCommentTap,
   });
 
   final List<Post> posts;
-
-  /// Author ids with a follow request in flight.
-  final Set<String> followInProgress;
-
+  final bool hasMore;
+  final bool isLoadingMore;
   final Future<void> Function() onRefresh;
+  final VoidCallback onLoadMore;
   final ValueChanged<Post> onLikeTap;
-  final ValueChanged<Post> onFollowTap;
   final ValueChanged<Post>? onPostTap;
   final ValueChanged<Post>? onCommentTap;
+
+  @override
+  State<PostsFeedList> createState() => _PostsFeedListState();
+}
+
+class _PostsFeedListState extends State<PostsFeedList> {
+  final _controller = ScrollController();
+
+  @override
+  void initState() {
+    super.initState();
+    _controller.addListener(_onScroll);
+  }
+
+  void _onScroll() {
+    final p = _controller.position;
+    if (p.pixels >= p.maxScrollExtent - 300) widget.onLoadMore();
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
     return RefreshIndicator(
       color: AppColors.brandEmerald,
-      onRefresh: onRefresh,
+      onRefresh: widget.onRefresh,
       child: ListView.builder(
+        controller: _controller,
         physics: const AlwaysScrollableScrollPhysics(),
         padding: const EdgeInsets.fromLTRB(16, 12, 16, 8),
-        itemCount: posts.length + 1,
+        itemCount: widget.posts.length + 1,
         itemBuilder: (context, index) {
-          if (index == posts.length) return const FeedEndIndicator();
+          if (index == widget.posts.length) {
+            if (widget.isLoadingMore) {
+              return const Padding(
+                padding: EdgeInsets.symmetric(vertical: 24),
+                child: Center(
+                  child: CircularProgressIndicator(
+                    color: AppColors.brandEmerald,
+                    strokeWidth: 3,
+                  ),
+                ),
+              );
+            }
+            return widget.hasMore
+                ? const SizedBox(height: 24)
+                : const FeedEndIndicator();
+          }
 
-          final post = posts[index];
+          final post = widget.posts[index];
           return Padding(
             padding: const EdgeInsets.only(bottom: 16),
             child: PostCard(
               post: post,
-              isFollowLoading: followInProgress.contains(post.author.id),
-              onLikeTap: () => onLikeTap(post),
-              onFollowTap: () => onFollowTap(post),
-              onTap: onPostTap == null ? null : () => onPostTap!(post),
-              onCommentTap:
-                  onCommentTap == null ? null : () => onCommentTap!(post),
+              onLikeTap: () => widget.onLikeTap(post),
+              onTap: widget.onPostTap == null
+                  ? null
+                  : () => widget.onPostTap!(post),
+              onCommentTap: widget.onCommentTap == null
+                  ? null
+                  : () => widget.onCommentTap!(post),
             ),
           );
         },

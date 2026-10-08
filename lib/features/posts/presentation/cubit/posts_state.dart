@@ -20,34 +20,41 @@ final class PostsLoading extends PostsState {
 final class PostsLoaded extends PostsState {
   const PostsLoaded({
     required this.posts,
-    this.followInProgress = const {},
+    this.page = 1,
+    this.hasMore = false,
+    this.isLoadingMore = false,
     this.actionError,
   });
 
   final List<Post> posts;
+  final int page;
+  final bool hasMore;
+  final bool isLoadingMore;
 
-  /// Author ids whose follow request is in flight (drives FollowButton spinner).
-  final Set<String> followInProgress;
-
-  /// One-shot message for a failed like / follow / refresh. The UI shows it as
-  /// a snackbar. It is cleared by the next emit.
+  /// One-shot message for a failed like / refresh / load-more. The UI shows
+  /// it as a snackbar. It is cleared by the next emit.
   final String? actionError;
 
-  /// NOTE: [actionError] is intentionally NOT carried over, so every
-  /// copyWith produces a state without an error unless one is passed.
+  /// [actionError] is intentionally NOT carried over, so every copyWith
+  /// produces a state without an error unless one is passed.
   PostsLoaded copyWith({
     List<Post>? posts,
-    Set<String>? followInProgress,
+    int? page,
+    bool? hasMore,
+    bool? isLoadingMore,
     String? actionError,
   }) =>
       PostsLoaded(
         posts: posts ?? this.posts,
-        followInProgress: followInProgress ?? this.followInProgress,
+        page: page ?? this.page,
+        hasMore: hasMore ?? this.hasMore,
+        isLoadingMore: isLoadingMore ?? this.isLoadingMore,
         actionError: actionError,
       );
 
   @override
-  List<Object?> get props => [posts, followInProgress, actionError];
+  List<Object?> get props =>
+      [posts, page, hasMore, isLoadingMore, actionError];
 }
 
 /// First load failed (full-screen error with retry).

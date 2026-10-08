@@ -19,7 +19,7 @@ class Post extends Equatable {
     this.isLiked = false,
   });
 
-  final String id;
+  final int id;
   final Author author;
   final String title;
   final String excerpt;

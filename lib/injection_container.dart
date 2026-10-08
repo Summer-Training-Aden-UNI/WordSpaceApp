@@ -28,7 +28,7 @@ import 'features/posts/domain/usecases/get_post.dart';
 import 'features/posts/domain/usecases/create_post.dart';
 import 'features/posts/domain/usecases/update_post.dart';
 import 'features/posts/domain/usecases/delete_post.dart';
-
+  import 'features/posts/presentation/cubit/posts_cubit.dart';
 // comments
 import 'features/comments/data/datasources/comment_remote_datasource.dart';
 import 'features/comments/data/repositories/comment_repository_impl.dart';
@@ -96,6 +96,8 @@ Future<void> init() async {
   sl.registerLazySingleton<PostRemoteDataSource>(
     () => PostRemoteDataSourceImpl(sl<DioClient>().dio),
   );
+    sl.registerFactory(() => PostsCubit(
+        getPosts: sl(), likePost: sl(), unlikePost: sl()));
   sl.registerLazySingleton<PostRepository>(() => PostRepositoryImpl(sl()));
   sl.registerLazySingleton(() => GetPosts(sl()));
   sl.registerLazySingleton(() => GetPost(sl()));

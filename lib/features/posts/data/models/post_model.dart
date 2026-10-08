@@ -37,7 +37,7 @@ class PostModel extends Post {
     final excerpt =
         (json['excerpt'] ?? json['body'] ?? json['content'])?.toString() ?? '';
     return PostModel(
-      id: json['id'].toString(),
+      id: json['id'] as int,
       author: AuthorModel.fromJson(authorJson),
       title: json['title']?.toString() ?? '',
       excerpt: excerpt,

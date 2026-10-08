@@ -16,17 +16,13 @@ class PostCard extends StatelessWidget {
   const PostCard({
     super.key,
     required this.post,
-    required this.isFollowLoading,
     required this.onLikeTap,
-    required this.onFollowTap,
     this.onTap,
     this.onCommentTap,
   });
 
   final Post post;
-  final bool isFollowLoading;
   final VoidCallback onLikeTap;
-  final VoidCallback onFollowTap;
   final VoidCallback? onTap;
   final VoidCallback? onCommentTap;
 
@@ -72,8 +68,6 @@ class PostCard extends StatelessWidget {
                   author: post.author,
                   publishedAt: post.publishedAt,
                   isFeatured: featured,
-                  isFollowLoading: isFollowLoading,
-                  onFollowTap: onFollowTap,
                 ),
               ),
               Padding(

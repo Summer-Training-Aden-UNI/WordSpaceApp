@@ -11,7 +11,7 @@ class AuthorModel extends Author {
 
   factory AuthorModel.fromJson(Map<String, dynamic> json) {
     return AuthorModel(
-      id: (json['id']).toString(),
+      id: json['id'] as int,
       name: json['name']?.toString() ?? '',
       headline: json['headline']?.toString(),
       avatarUrl: (json['avatar_url'] ?? json['avatar'])?.toString(),
