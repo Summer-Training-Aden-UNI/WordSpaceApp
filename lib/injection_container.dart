@@ -44,7 +44,7 @@ import 'features/comments/domain/usecases/delete_comment.dart';
 import 'features/likes/data/datasources/like_remote_datasource.dart';
 import 'features/likes/data/repositories/like_repository_impl.dart';
 import 'features/likes/domain/repositories/like_repository.dart';
-import 'features/likes/domain/usecases/get_likes.dart';
+import 'features/likes/domain/usecases/get_liked_posts.dart';
 import 'features/likes/domain/usecases/like_post.dart';
 import 'features/likes/domain/usecases/unlike_post.dart';
 
@@ -131,7 +131,7 @@ Future<void> init() async {
     () => LikeRemoteDataSourceImpl(sl<DioClient>().dio),
   );
   sl.registerLazySingleton<LikeRepository>(() => LikeRepositoryImpl(sl()));
-  sl.registerLazySingleton(() => GetLikes(sl()));
+  sl.registerLazySingleton(() => GetLikedPosts(sl()));
   sl.registerLazySingleton(() => LikePost(sl()));
   sl.registerLazySingleton(() => UnlikePost(sl()));
 

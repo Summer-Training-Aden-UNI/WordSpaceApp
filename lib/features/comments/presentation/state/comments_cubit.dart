@@ -42,7 +42,9 @@ class CommentsCubit extends Cubit<CommentsState> {
       (failure) => emit(
         state.copyWith(
           status: CommentsStatus.failure,
-          errorMessage: failure.message,
+          errorMessage: failure is AuthFailure
+              ? 'Sign in to see the comments.'
+              : failure.message,
         ),
       ),
       (page) => emit(

@@ -1,9 +1,8 @@
 import 'package:dartz/dartz.dart';
 
 import '../../../../core/error/failures.dart';
-import '../../../../core/utils/paginated.dart';
 import '../../../../core/utils/safe_call.dart';
-import '../../../follow/domain/entities/public_user.dart';
+import '../../../posts/domain/entities/post.dart';
 import '../../domain/repositories/like_repository.dart';
 import '../datasources/like_remote_datasource.dart';
 
@@ -12,8 +11,8 @@ class LikeRepositoryImpl implements LikeRepository {
   LikeRepositoryImpl(this.remote);
 
   @override
-  Future<Either<Failure, Paginated<PublicUser>>> getLikes(int postId, {int page = 1}) =>
-      safeCall(() => remote.getLikes(postId, page: page));
+  Future<Either<Failure, List<Post>>> getLikedPosts() =>
+      safeCall<List<Post>>(() => remote.getLikedPosts());
 
   @override
   Future<Either<Failure, Unit>> likePost(int postId) => safeCall(() async {

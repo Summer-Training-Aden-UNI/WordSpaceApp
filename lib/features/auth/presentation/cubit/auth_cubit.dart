@@ -85,6 +85,11 @@ class AuthCubit extends Cubit<AuthState> {
 
   void continueAsGuest() => emit(const AuthGuest());
 
+  /// A guest wants to sign in: back to the Welcome screen.
+  void leaveGuest() {
+    if (state is AuthGuest) emit(const AuthUnauthenticated());
+  }
+
   /// Called by DioClient after a 401. Only matters for a logged-in user.
   void sessionExpired() {
     if (state is AuthAuthenticated) emit(const AuthUnauthenticated());
