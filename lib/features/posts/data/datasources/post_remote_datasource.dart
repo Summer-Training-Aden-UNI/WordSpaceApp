@@ -59,7 +59,7 @@ class PostRemoteDataSourceImpl implements PostRemoteDataSource {
     final fields = <String, dynamic>{
       'title': title,
       'body': body,
-      if (status != null) 'status': status,
+      'status': ?status,
     };
     final Response res;
     if (imagePath != null) {
@@ -82,7 +82,7 @@ class PostRemoteDataSourceImpl implements PostRemoteDataSource {
     final fields = <String, dynamic>{
       'title': title,
       'body': body,
-      if (status != null) 'status': status,
+      'status': ?status,
     };
     final Response res;
     if (imagePath != null) {

@@ -62,7 +62,7 @@ class UnknownException extends ServerException {
   UnknownException(super.errorModel);
 }
 
-handleDioException(DioException e) {
+Never handleDioException(DioException e) {
   switch (e.type) {
     case DioExceptionType.connectionError:
       throw ConnectionErrorException(ErrorModel.fromJson(e.response!.data));
@@ -101,6 +101,9 @@ handleDioException(DioException e) {
           throw BadResponseException(
             ErrorModel(status: 504, errorMessage: e.response!.data),
           );
+          
+            default: // 422, 500, anything else
+          throw BadResponseException(ErrorModel.fromJson(e.response!.data));
       }
 
     case DioExceptionType.cancel:
