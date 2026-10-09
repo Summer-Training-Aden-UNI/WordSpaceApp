@@ -1,5 +1,6 @@
 import 'package:flutter_bloc/flutter_bloc.dart';
 
+import '../../../../core/error/failures.dart';
 import '../../domain/usecases/add_comment.dart';
 import '../../domain/usecases/delete_comment.dart';
 import '../../domain/usecases/get_comments.dart';
@@ -98,7 +99,7 @@ class CommentsCubit extends Cubit<CommentsState> {
 
     return result.fold<bool>(
       (failure) {
-        emit(state.copyWith(isSubmitting: false, actionError: failure.message));
+        emit(state.copyWith(isSubmitting: false, actionError: _msg(failure)));
         return false;
       },
       (comment) {
@@ -128,7 +129,7 @@ class CommentsCubit extends Cubit<CommentsState> {
     final stillDeleting = {...state.deletingIds}..remove(commentId);
     result.fold(
       (failure) => emit(
-        state.copyWith(deletingIds: stillDeleting, actionError: failure.message),
+        state.copyWith(deletingIds: stillDeleting, actionError: _msg(failure)),
       ),
       (_) => emit(
         state.copyWith(
@@ -143,4 +144,7 @@ class CommentsCubit extends Cubit<CommentsState> {
       ),
     );
   }
+  /// Guests get a friendly message instead of the raw "Unauthenticated".
+  String _msg(Failure failure) =>
+      failure is AuthFailure ? 'Sign in to comment.' : failure.message;
 }

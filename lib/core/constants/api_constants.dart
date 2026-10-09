@@ -1,7 +1,7 @@
 class ApiConstants {
   // Your Laravel server on the LAN. Use http://10.0.2.2:8000/api for the
   // Android emulator. Change the IP if your PC's address changes.
-  static const String baseUrl = 'http://192.168.0.70:8000/api';
+  static const String baseUrl = 'http://127.0.0.1:8000/api';
 
   // Auth
   static const String register = '/register';

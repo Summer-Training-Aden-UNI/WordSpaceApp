@@ -9,6 +9,7 @@ import 'features/posts/presentation/cubit/posts_cubit.dart';
 import 'features/posts/presentation/pages/home_page.dart';
 import 'injection_container.dart' as di;
 import 'features/posts/presentation/pages/create_post_page.dart';
+import 'features/search/presentation/pages/search_page.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -63,8 +64,33 @@ class AuthGate extends StatelessWidget {
                   // TODO: Navigate to FavoritesPage.
                   break;
 
-                case NavTab.search:
-                  // TODO: Navigate to SearchPage.
+                                case NavTab.search:
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (searchContext) => SearchPage(
+                        onNavTabSelected: (searchTab) {
+                          switch (searchTab) {
+                            case NavTab.home:
+                              Navigator.pop(searchContext);
+                              break;
+                            case NavTab.create:
+                              Navigator.push(
+                                searchContext,
+                                MaterialPageRoute(
+                                  builder: (_) => const CreatePostPage(),
+                                ),
+                              );
+                              break;
+                            case NavTab.search:
+                            case NavTab.favorites:
+                            case NavTab.profile:
+                              break;
+                          }
+                        },
+                      ),
+                    ),
+                  );
                   break;
 
                 case NavTab.profile:

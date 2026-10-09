@@ -2,30 +2,29 @@ import 'dart:async';
 
 import 'package:flutter_bloc/flutter_bloc.dart';
 
-import '../../../follow/presentation/follow_store.dart';
+import '../../../../core/error/failures.dart';
 import '../../../likes/domain/usecases/like_post.dart';
 import '../../../likes/domain/usecases/unlike_post.dart';
 import '../../../posts/domain/entities/post.dart';
 import '../../domain/usecases/search.dart';
+
 import 'search_state.dart';
 
-/// Search page logic: debounced search, like and follow on the results.
+/// Search page logic: debounced search, like on the results.
 class SearchCubit extends Cubit<SearchState> {
   SearchCubit({
     required Search search,
     required LikePost likePost,
-    required UnlikePost unlikePost,
-    required FollowStore followStore,
+    required UnlikePost unlikePost,  
   })  : _search = search,
         _likePost = likePost,
         _unlikePost = unlikePost,
-        _followStore = followStore,
         super(const SearchState());
 
   final Search _search;
   final LikePost _likePost;
   final UnlikePost _unlikePost;
-  final FollowStore _followStore;
+  
 
   /// The API rejects shorter queries (the Search use case skips them too).
   static const minChars = 2;
@@ -86,8 +85,7 @@ class SearchCubit extends Cubit<SearchState> {
         ),
       ),
       (found) {
-        // Keep the shared follow state in sync with what the server says.
-        _followStore.seedAuthors(found.posts.map((p) => p.author));
+
         emit(
           SearchState(
             status: SearchStatus.success,
@@ -133,22 +131,16 @@ class SearchCubit extends Cubit<SearchState> {
               likeCount: original.likeCount,
             ),
           ),
-          actionError: failure.message,
+          actionError: failure is AuthFailure
+            ? 'Sign in to like posts.'
+            : failure.message,
         ),
       ),
       (_) {},
     );
   }
 
-  /// Follow / unfollow goes through the app-wide [FollowStore], so every
-  /// screen that shows this author stays in sync.
-  Future<void> toggleFollow(int authorId) async {
-    final failure = await _followStore.toggle(authorId);
-    if (isClosed) return;
-    if (failure != null) {
-      emit(state.copyWith(actionError: failure.message));
-    }
-  }
+
 
   List<Post> _mapPost(int postId, Post Function(Post) update) =>
       [for (final p in state.posts) p.id == postId ? update(p) : p];

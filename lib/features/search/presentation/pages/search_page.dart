@@ -48,7 +48,6 @@ class SearchPage extends StatelessWidget {
         search: sl(),
         likePost: sl(),
         unlikePost: sl(),
-        followStore: sl(),
       ),
       child: _SearchView(
         followStore: sl<FollowStore>(),
@@ -248,28 +247,14 @@ class _Results extends StatelessWidget {
           for (final post in state.posts)
             Padding(
               padding: const EdgeInsets.only(bottom: 16),
-              // Follow state comes from the shared store, so it matches
-              // every other screen that shows this author.
-              child: ListenableBuilder(
-                listenable: followStore,
-                builder: (context, _) {
-                  final shown = post.copyWith(
-                    author: post.author.copyWith(
-                      isFollowing: followStore.isFollowing(post.author.id),
-                    ),
-                  );
-                  return PostCard(
-                    key: ValueKey('post-${post.id}'),
-                    post: shown,
-                    isFollowLoading: false,
-                    //onLikeTap: () => cubit.toggleLike(post.id),
-                    //onFollowTap: () => cubit.toggleFollow(post.author.id),
-                    onTap: onPostTap == null ? null : () => onPostTap!(post),
-                    onCommentTap: onCommentTap == null
-                        ? null
-                        : () => onCommentTap!(post),
-                  );
-                },
+              child: PostCard(
+                key: ValueKey('post-${post.id}'),
+                post: post,
+                onLikeTap: () => cubit.toggleLike(post.id),
+                onTap: onPostTap == null ? null : () => onPostTap!(post),
+                onCommentTap: onCommentTap == null
+                    ? null
+                    : () => onCommentTap!(post),
               ),
             ),
         ],
