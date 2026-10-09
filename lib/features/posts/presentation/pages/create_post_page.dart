@@ -1,5 +1,6 @@
 import 'dart:io';
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:image_picker/image_picker.dart';
@@ -11,7 +12,7 @@ import '../../../../core/widgets/widgets.dart';
 import '../../../../injection_container.dart';
 import '../cubit/create_post_cubit.dart';
 
-/// Create Post screen. Pops with the created [Post] on success.
+/// Create Post screen. Pops with the created Post on success.
 class CreatePostPage extends StatelessWidget {
   const CreatePostPage({super.key, this.userName, this.userImageUrl});
 
@@ -46,6 +47,8 @@ class _CreatePostViewState extends State<_CreatePostView> {
   final _bodyController = TextEditingController();
   final _picker = ImagePicker();
 
+  Uint8List? _selectedImageBytes;
+
   @override
   void dispose() {
     _titleController.dispose();
@@ -55,32 +58,58 @@ class _CreatePostViewState extends State<_CreatePostView> {
 
   Future<void> _pickImage() async {
     final cubit = context.read<CreatePostCubit>();
+
     try {
       final file = await _picker.pickImage(
         source: ImageSource.gallery,
         maxWidth: 1600,
         imageQuality: 85,
       );
+
       if (file == null || !mounted) return;
 
       final name = file.name.toLowerCase();
+
       if (!_allowedExtensions.any(name.endsWith)) {
         AppSnackBar.error(context, 'Please choose a JPG or PNG image.');
         return;
       }
-      if (await file.length() > _maxImageBytes) {
-        if (mounted) AppSnackBar.error(context, 'The image must be under 5MB.');
+
+      final bytes = await file.readAsBytes();
+
+      if (bytes.length > _maxImageBytes) {
+        if (mounted) {
+          AppSnackBar.error(context, 'The image must be under 5MB.');
+        }
         return;
       }
+
+      setState(() {
+        _selectedImageBytes = bytes;
+      });
+
       cubit.setImage(file.path);
-    } catch (_) {
-      if (mounted) AppSnackBar.error(context, 'Couldn\'t open your gallery.');
+    } catch (e) {
+      if (mounted) {
+        AppSnackBar.error(context, 'Couldn\'t open your gallery.');
+      }
+      debugPrint('Image picker error: $e');
     }
+  }
+
+  void _removeImage() {
+    setState(() {
+      _selectedImageBytes = null;
+    });
+
+    context.read<CreatePostCubit>().removeImage();
   }
 
   void _submit() {
     FocusScope.of(context).unfocus();
+
     if (!_formKey.currentState!.validate()) return;
+
     context.read<CreatePostCubit>().submit(
       title: _titleController.text,
       body: _bodyController.text,
@@ -92,20 +121,21 @@ class _CreatePostViewState extends State<_CreatePostView> {
     final keyboardOpen = MediaQuery.of(context).viewInsets.bottom > 0;
 
     return BlocConsumer<CreatePostCubit, CreatePostState>(
-      listenWhen: (prev, curr) =>
-          curr.errorMessage != null || curr.createdPost != null,
+      listenWhen: (previous, current) =>
+          current.errorMessage != null || current.createdPost != null,
       listener: (context, state) {
         if (state.errorMessage != null) {
           AppSnackBar.error(context, state.errorMessage!);
         }
+
         final post = state.createdPost;
+
         if (post != null) {
-          AppSnackBar.show(
-            context,
-            state.status == PublishStatus.published
-                ? 'Post published'
-                : 'Draft saved',
-          );
+          final message = state.status == PublishStatus.published
+              ? 'Post published successfully!'
+              : 'Draft saved successfully!';
+
+          AppSnackBar.show(context, message);
           Navigator.of(context).pop(post);
         }
       },
@@ -137,16 +167,17 @@ class _CreatePostViewState extends State<_CreatePostView> {
                     maxLength: 100,
                     textInputAction: TextInputAction.next,
                     errorText: state.fieldError('title'),
-                    validator: (v) => (v == null || v.trim().isEmpty)
+                    validator: (value) => value == null || value.trim().isEmpty
                         ? 'Please enter a title'
                         : null,
                   ),
                   const SizedBox(height: 20),
                   _CoverImagePicker(
                     imagePath: state.imagePath,
+                    imageBytes: _selectedImageBytes,
                     errorText: state.fieldError('image'),
                     onPick: _pickImage,
-                    onRemove: cubit.removeImage,
+                    onRemove: _removeImage,
                   ),
                   const SizedBox(height: 20),
                   _CounterTextField(
@@ -160,7 +191,7 @@ class _CreatePostViewState extends State<_CreatePostView> {
                     minLines: 6,
                     maxLines: 12,
                     errorText: state.fieldError('body'),
-                    validator: (v) => (v == null || v.trim().isEmpty)
+                    validator: (value) => value == null || value.trim().isEmpty
                         ? 'Please write something'
                         : null,
                   ),
@@ -196,13 +227,14 @@ class _CreatePostViewState extends State<_CreatePostView> {
               ),
             ),
           ),
-          // Hidden while typing, so it doesn't ride above the keyboard.
           bottomNavigationBar: keyboardOpen
               ? null
               : BottomNavBar(
                   currentTab: NavTab.create,
                   onTabSelected: (tab) {
-                    if (tab != NavTab.create) Navigator.of(context).maybePop();
+                    if (tab != NavTab.create) {
+                      Navigator.of(context).maybePop();
+                    }
                   },
                 ),
         );
@@ -212,11 +244,9 @@ class _CreatePostViewState extends State<_CreatePostView> {
 }
 
 // =============================================================================
-// Private widgets used only by this page
+// Private widgets
 // =============================================================================
 
-/// Label row above a field: "Post Title *" on the left, optional trailing
-/// widget (counter, hint...) on the right.
 class _FieldLabel extends StatelessWidget {
   const _FieldLabel({
     required this.label,
@@ -247,14 +277,12 @@ class _FieldLabel extends StatelessWidget {
             ),
           ),
         ),
-        ?trailing,
+        if (trailing != null) trailing!,
       ],
     );
   }
 }
 
-/// Text field with the label above it and a live "12/100" counter.
-/// Fill, borders and hint style come from AppTheme (inputDecorationTheme).
 class _CounterTextField extends StatefulWidget {
   const _CounterTextField({
     required this.label,
@@ -278,8 +306,6 @@ class _CounterTextField extends StatefulWidget {
   final int maxLines;
   final TextInputAction? textInputAction;
   final String? Function(String?)? validator;
-
-  /// Server-side error (Laravel 422). The [validator] error wins if both exist.
   final String? errorText;
 
   @override
@@ -309,7 +335,9 @@ class _CounterTextFieldState extends State<_CounterTextField> {
         ),
         const SizedBox(height: 8),
         Focus(
-          onFocusChange: (v) => setState(() => _focused = v),
+          onFocusChange: (value) {
+            setState(() => _focused = value);
+          },
           child: AnimatedContainer(
             duration: const Duration(milliseconds: 150),
             decoration: BoxDecoration(
@@ -335,7 +363,7 @@ class _CounterTextFieldState extends State<_CounterTextField> {
               decoration: InputDecoration(
                 hintText: widget.hint,
                 errorText: widget.errorText,
-                counterText: '', // we draw our own counter in the label row
+                counterText: '',
                 alignLabelWithHint: true,
               ),
             ),
@@ -346,17 +374,17 @@ class _CounterTextFieldState extends State<_CounterTextField> {
   }
 }
 
-/// "Add Cover Image (Optional)" block: dashed upload box, or a preview of the
-/// chosen image with a remove button. Picking is done by the parent.
 class _CoverImagePicker extends StatelessWidget {
   const _CoverImagePicker({
     required this.imagePath,
+    required this.imageBytes,
     required this.onPick,
     required this.onRemove,
     this.errorText,
   });
 
   final String? imagePath;
+  final Uint8List? imageBytes;
   final VoidCallback onPick;
   final VoidCallback onRemove;
   final String? errorText;
@@ -456,8 +484,14 @@ class _CoverImagePicker extends StatelessWidget {
           fit: StackFit.expand,
           children: [
             GestureDetector(
-              onTap: onPick, // tap the image to change it
-              child: Image.file(File(imagePath!), fit: BoxFit.cover),
+              onTap: onPick,
+              child: kIsWeb
+                  ? (imageBytes != null
+                        ? Image.memory(imageBytes!, fit: BoxFit.cover)
+                        : const Center(
+                            child: Text('Image preview unavailable'),
+                          ))
+                  : Image.file(File(imagePath!), fit: BoxFit.cover),
             ),
             Positioned(
               top: 8,
@@ -508,6 +542,7 @@ class _DashedBorderPainter extends CustomPainter {
 
     for (final metric in path.computeMetrics()) {
       var distance = 0.0;
+
       while (distance < metric.length) {
         canvas.drawPath(metric.extractPath(distance, distance + _dash), paint);
         distance += _dash + _gap;
@@ -519,7 +554,6 @@ class _DashedBorderPainter extends CustomPainter {
   bool shouldRepaint(_DashedBorderPainter old) => old.color != color;
 }
 
-/// One radio-style card in "Publishing Options" (Publish / Save as Draft).
 class _PublishOptionTile extends StatelessWidget {
   const _PublishOptionTile({
     required this.icon,

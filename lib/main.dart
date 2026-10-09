@@ -12,6 +12,9 @@ import 'features/posts/presentation/pages/create_post_page.dart';
 import 'features/likes/presentation/cubit/favorites_cubit.dart';
 import 'features/likes/presentation/pages/favorites_page.dart';
 import 'features/search/presentation/pages/search_page.dart';
+import 'features/posts/domain/entities/post.dart';
+import 'features/posts/presentation/pages/post_details_page.dart';
+import 'features/comments/presentation/widgets/comments_section.dart';
 import 'injection_container.dart' as di;
 
 Future<void> main() async {
@@ -57,6 +60,12 @@ class AuthGate extends StatelessWidget {
             child: Builder(
               builder: (homeContext) {
                 return HomePage(
+                  onPostTap: (post) {
+                    _openPostDetails(homeContext, post);
+                  },
+                  onCommentsTap: (post) {
+                    _openPostDetails(homeContext, post);
+                  },
                   onNavTabSelected: (tab) {
                     switch (tab) {
                       case NavTab.home:
@@ -209,4 +218,33 @@ class AuthGate extends StatelessWidget {
       },
     );
   }
+}
+
+/// Opens Post Details while reusing the existing PostsCubit.
+void _openPostDetails(BuildContext context, Post post) {
+  final postsCubit = context.read<PostsCubit>();
+  final authState = context.read<AuthCubit>().state;
+
+  final user = authState is AuthAuthenticated
+      ? authState.user
+      : null;
+
+  Navigator.push(
+    context,
+    MaterialPageRoute(
+      builder: (_) => BlocProvider<PostsCubit>.value(
+        value: postsCubit,
+        child: PostDetailsPage(
+          post: post,
+          userName: user?.name,
+          commentsContent: CommentsSection(
+            postId: post.id,
+            currentUserId: user?.id,
+            currentUserName: user?.name,
+            initialCount: post.commentCount,
+          ),
+        ),
+      ),
+    ),
+  );
 }
