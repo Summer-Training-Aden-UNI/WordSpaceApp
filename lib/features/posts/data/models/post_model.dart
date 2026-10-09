@@ -1,4 +1,3 @@
-
 import '../../domain/entities/post.dart';
 import 'author_model.dart';
 
@@ -31,8 +30,7 @@ class PostModel extends Post {
     final publishedAtValue =
         json['published_at'] ?? json['created_at'] ?? json['publishedAt'];
 
-    final publishedAt =
-        DateTime.tryParse(publishedAtValue?.toString() ?? '');
+    final publishedAt = DateTime.tryParse(publishedAtValue?.toString() ?? '');
 
     if (publishedAt == null) {
       throw const FormatException(
@@ -69,29 +67,26 @@ class PostModel extends Post {
       excerpt: excerpt,
       body: body,
       publishedAt: publishedAt,
-       readTimeMinutes: (json['read_time_minutes'] as num?)?.toInt() ??
+      readTimeMinutes: _toInt(json['read_time_minutes']) ??
           _estimateReadTime(excerpt),
-      likeCount:
-          (json['like_count'] ?? json['likes_count'] as num?)?.toInt() ?? 0,
+      likeCount: _toInt(json['likes_count'] ?? json['like_count']) ?? 0,
       commentCount:
-          (json['comment_count'] ?? json['comments_count'] as num?)?.toInt() ??
-              0,
+          _toInt(json['comments_count'] ?? json['comment_count']) ?? 0,
       coverImageUrl:
           (json['image_url'] ?? json['image'] ?? json['cover_image'])
               ?.toString(),
       tag: json['tag']?.toString(),
       isFeatured: json['is_featured'] as bool? ?? false,
-      isLiked:
-          (json['liked_by_user'] ?? json['is_liked']) as bool? ?? false,
+      isLiked: (json['liked_by_user'] ?? json['is_liked']) as bool? ?? false,
     );
   }
-  /// The API has no read time, so estimate it: about 200 words per minute.
-  static int _estimateReadTime(String text) {
-    final trimmed = text.trim();
-    final words = trimmed.isEmpty ? 0 : trimmed.split(RegExp(r'\s+')).length;
-    final minutes = (words / 200).ceil();
-    return minutes < 1 ? 1 : minutes;
+
+  /// Reads a number whether the API sends it as 3, 3.0 or "3".
+  static int? _toInt(dynamic value) {
+    if (value is num) return value.toInt();
+    return int.tryParse(value?.toString() ?? '');
   }
+
   /// The API has no read time, so estimate it: about 200 words per minute.
   static int _estimateReadTime(String text) {
     final trimmed = text.trim();

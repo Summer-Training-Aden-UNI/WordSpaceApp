@@ -2,6 +2,8 @@
 import 'package:flutter/material.dart';
 
 import '../../domain/entities/post.dart';
+import '../../../../core/theme/app_colors.dart';
+import '../../../../core/theme/app_fonts.dart';
 
 class PostCommentsSection extends StatelessWidget {
   const PostCommentsSection({
@@ -57,7 +59,7 @@ class PostCommentsSection extends StatelessWidget {
           commentsContent!
         else
           Text(
-            'Comments will appear here when the comments feature is connected.',
+            'Comments are not available yet.',
             style: AppFonts.bodyMd(
               color: AppColors.slateMuted,
             ),
