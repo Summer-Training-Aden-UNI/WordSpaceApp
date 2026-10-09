@@ -18,6 +18,21 @@ class PostCommentsSection extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // When real comments are plugged in, they draw their own header
+    // (with a live count), so we only show ours for the placeholder.
+    if (commentsContent != null) {
+      return Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          commentsContent!,
+          if (commentComposer != null) ...[
+            const SizedBox(height: 12),
+            commentComposer!,
+          ],
+        ],
+      );
+    }
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -25,29 +40,20 @@ class PostCommentsSection extends StatelessWidget {
           children: [
             Text(
               'Comments',
-              style: AppFonts.headlineMd(
-                color: AppColors.onSurface,
-              ),
+              style: AppFonts.headlineMd(color: AppColors.onSurface),
             ),
             const SizedBox(width: 8),
             Text(
               '${post.commentCount}',
-              style: AppFonts.labelMd(
-                color: AppColors.slateMuted,
-              ),
+              style: AppFonts.labelMd(color: AppColors.slateMuted),
             ),
           ],
         ),
         const SizedBox(height: 12),
-        if (commentsContent != null)
-          commentsContent!
-        else
-          Text(
-            'Comments will appear here when the comments feature is connected.',
-            style: AppFonts.bodyMd(
-              color: AppColors.slateMuted,
-            ),
-          ),
+        Text(
+          'Comments will appear here when the comments feature is connected.',
+          style: AppFonts.bodyMd(color: AppColors.slateMuted),
+        ),
         if (commentComposer != null) ...[
           const SizedBox(height: 12),
           commentComposer!,
