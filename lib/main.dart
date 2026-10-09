@@ -2,6 +2,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
+import 'app_navigation.dart';
+import 'core/widgets/coming_soon_page.dart';
+
 import 'core/theme/app_theme.dart';
 import 'core/widgets/widgets.dart';
 import 'features/auth/presentation/cubit/auth_cubit.dart';
@@ -57,6 +60,8 @@ class AuthGate extends StatelessWidget {
             child: Builder(
               builder: (homeContext) {
                 return HomePage(
+                   onPostTap: (post) => openPostDetails(homeContext, post),
+                        onCommentsTap: (post) => openPostDetails(homeContext, post),
                   onNavTabSelected: (tab) {
                     switch (tab) {
                       case NavTab.home:
@@ -85,11 +90,17 @@ class AuthGate extends StatelessWidget {
                                   value: postsCubit,
                                 ),
                                 BlocProvider<FavoritesCubit>(
-                                  create: (_) =>
-                                      FavoritesCubit(postsCubit),
+                                  create: (_) => FavoritesCubit(
+                                    postsCubit: postsCubit,
+                                    getLikedPosts: di.sl(),
+                                    likePost: di.sl(),
+                                    unlikePost: di.sl(),
+                                  )..load(),
                                 ),
                               ],
                               child: FavoritesPage(
+                                onSignInTap: () => signInFromGuest(homeContext),
+                                onPostTap: (post) => openPostDetails(homeContext, post),
                                 onNavTabSelected: (favoritesTab) {
                                   switch (favoritesTab) {
                                     case NavTab.home:
@@ -116,6 +127,16 @@ class AuthGate extends StatelessWidget {
                                         MaterialPageRoute(
                                           builder: (searchContext) =>
                                               SearchPage(
+                                                onPostTap: (post) =>
+                                                openPostDetails(
+                                                  homeContext,
+                                                  post,
+                                                ),
+                                            onCommentTap: (post) =>
+                                                openPostDetails(
+                                                  homeContext,
+                                                  post,
+                                                ),
                                             onNavTabSelected: (searchTab) {
                                               switch (searchTab) {
                                                 case NavTab.home:
@@ -139,7 +160,10 @@ class AuthGate extends StatelessWidget {
 
                                                 case NavTab.search:
                                                 case NavTab.favorites:
+                                                  break;
+
                                                 case NavTab.profile:
+                                                  openMyProfile(homeContext);
                                                   break;
                                               }
                                             },
@@ -149,13 +173,10 @@ class AuthGate extends StatelessWidget {
                                       break;
 
                                     case NavTab.profile:
-                                      // TODO: Navigate to ProfilePage.
-                                      break;
+                                       openMyProfile(homeContext);
                                   }
                                 },
-                                onAvatarTap: () {
-                                  // TODO: Navigate to the user's profile.
-                                },
+                                 onAvatarTap: () => openMyProfile(homeContext),
                               ),
                             ),
                           ),
@@ -167,6 +188,10 @@ class AuthGate extends StatelessWidget {
                           homeContext,
                           MaterialPageRoute(
                             builder: (searchContext) => SearchPage(
+                              onPostTap: (post) =>
+                                  openPostDetails(homeContext, post),
+                              onCommentTap: (post) =>
+                                  openPostDetails(homeContext, post),
                               onNavTabSelected: (searchTab) {
                                 switch (searchTab) {
                                   case NavTab.home:
@@ -185,7 +210,10 @@ class AuthGate extends StatelessWidget {
 
                                   case NavTab.search:
                                   case NavTab.favorites:
+                                    break;
+
                                   case NavTab.profile:
+                                    openMyProfile(homeContext);
                                     break;
                                 }
                               },
@@ -195,13 +223,11 @@ class AuthGate extends StatelessWidget {
                         break;
 
                       case NavTab.profile:
-                        // TODO: Navigate to ProfilePage.
+                          openMyProfile(homeContext);
                         break;
                     }
                   },
-                  onAvatarTap: () {
-                    // TODO: Navigate to the user's profile.
-                  },
+                  onAvatarTap: () => openMyProfile(homeContext),
                 );
               },
             ),

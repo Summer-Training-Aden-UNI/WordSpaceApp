@@ -7,10 +7,12 @@ import '../../theme/app_fonts.dart';
 ///   AppSnackBar.show(context, 'Post created');
 ///   AppSnackBar.error(context, failure.message);
 abstract final class AppSnackBar {
-  static void show(
+   static void show(
     BuildContext context,
     String message, {
     bool isError = false,
+    String? actionLabel,
+    VoidCallback? onAction,
   }) {
     ScaffoldMessenger.of(context)
       ..hideCurrentSnackBar()
@@ -19,9 +21,17 @@ abstract final class AppSnackBar {
           content: Text(message, style: AppFonts.bodyMd(color: Colors.white)),
           backgroundColor: isError ? AppColors.error : AppColors.slate,
           behavior: SnackBarBehavior.floating,
+          duration: Duration(seconds: actionLabel == null ? 4 : 5),
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(12),
           ),
+          action: actionLabel == null
+              ? null
+              : SnackBarAction(
+                  label: actionLabel,
+                  textColor: Colors.white,
+                  onPressed: onAction ?? () {},
+                ),
         ),
       );
   }

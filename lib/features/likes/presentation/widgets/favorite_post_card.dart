@@ -1,236 +1,247 @@
-
 import 'package:flutter/material.dart';
 
+import '../../../../core/widgets/widgets.dart';
+import '../../../../core/theme/app_colors.dart';
+import '../../../../core/theme/app_fonts.dart';
 import '../../../posts/domain/entities/post.dart';
+import '../../../posts/presentation/widgets/author_follow_button.dart';
 
 class FavoritePostCard extends StatelessWidget {
   final Post post;
   final VoidCallback onLikeTap;
   final VoidCallback? onReadTap;
-  final VoidCallback? onFollowTap;
 
   const FavoritePostCard({
     super.key,
     required this.post,
     required this.onLikeTap,
     this.onReadTap,
-    this.onFollowTap,
   });
+
+  static final _radius = BorderRadius.circular(16);
 
   @override
   Widget build(BuildContext context) {
-    final colors = Theme.of(context).colorScheme;
     final author = post.author;
     final imageUrl = post.coverImageUrl;
+    final hasImage = imageUrl != null && imageUrl.trim().isNotEmpty;
 
-    return Container(
+    return DecoratedBox(
       decoration: BoxDecoration(
-        color: colors.surfaceContainerLowest,
-        borderRadius: BorderRadius.circular(16),
-        boxShadow: [
+        borderRadius: _radius,
+        boxShadow: const [
           BoxShadow(
-            color: Colors.black.withValues(alpha: 0.035),
-            blurRadius: 8,
-            offset: const Offset(0, 2),
+            color: Color(0x0F0F172A),
+            blurRadius: 12,
+            offset: Offset(0, 4),
           ),
         ],
       ),
-      clipBehavior: Clip.antiAlias,
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // Author, reading time, follow, and favorite actions.
-            Row(
+      child: Material(
+        color: AppColors.surfaceContainerLowest,
+        borderRadius: _radius,
+        clipBehavior: Clip.antiAlias,
+        // Same as Home: the whole card opens the post. The buttons inside
+        // (follow, remove, read) handle their own taps.
+        child: InkWell(
+          onTap: onReadTap,
+          child: Padding(
+            padding: const EdgeInsets.all(16),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        author.name,
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: Theme.of(context).textTheme.labelLarge?.copyWith(
-                              fontWeight: FontWeight.w700,
+                // Avatar, author, read time, follow and remove.
+                Row(
+                  children: [
+                    UserAvatar(
+                      name: author.name,
+                      imageUrl: author.avatarUrl,
+                      size: 40,
+                    ),
+                    const SizedBox(width: 10),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            author.name,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: AppFonts.headlineSm(color: AppColors.slate),
+                          ),
+                          Text(
+                            '${post.readTimeMinutes} min read',
+                            style: AppFonts.bodySm(
+                              color: AppColors.slateMuted,
                             ),
+                          ),
+                        ],
                       ),
-                      const SizedBox(height: 5),
-                      Text(
-                        '${post.readTimeMinutes} min read',
-                        style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                              color: colors.onSurfaceVariant,
+                    ),
+                    const SizedBox(width: 8),
+                    AuthorFollowButton(
+                      authorId: author.id,
+                      initialIsFollowing: author.isFollowing,
+                    ),
+                    const SizedBox(width: 6),
+                    Material(
+                      color: AppColors.surfaceContainer,
+                      shape: const CircleBorder(),
+                      child: IconButton(
+                        onPressed: onLikeTap,
+                        tooltip: 'Remove from favorites',
+                        padding: EdgeInsets.zero,
+                        constraints: const BoxConstraints.tightFor(
+                          width: 32,
+                          height: 32,
+                        ),
+                        icon: const Icon(
+                          Icons.favorite_rounded,
+                          color: AppColors.error,
+                          size: 18,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+
+                const SizedBox(height: 12),
+
+                Text(
+                  post.title,
+                  maxLines: 3,
+                  overflow: TextOverflow.ellipsis,
+                  style: AppFonts.headlineMd(color: AppColors.slate),
+                ),
+                const SizedBox(height: 6),
+                Text(
+                  post.excerpt,
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                  style: AppFonts.bodyMd(color: AppColors.slateBody),
+                ),
+
+                if (hasImage) ...[
+                  const SizedBox(height: 12),
+                  ClipRRect(
+                    borderRadius: BorderRadius.circular(12),
+                    child: SizedBox(
+                      height: 176,
+                      width: double.infinity,
+                      child: Stack(
+                        fit: StackFit.expand,
+                        children: [
+                          Image.network(
+                            imageUrl,
+                            fit: BoxFit.cover,
+                            errorBuilder: (_, __, ___) =>
+                                const _ImagePlaceholder(),
+                          ),
+                          // Dark fade at the bottom, like the design.
+                          const DecoratedBox(
+                            decoration: BoxDecoration(
+                              gradient: LinearGradient(
+                                begin: Alignment.bottomCenter,
+                                end: Alignment.topCenter,
+                                colors: [
+                                  Color(0x99000000),
+                                  Color(0x00000000),
+                                ],
+                                stops: [0, 0.6],
+                              ),
                             ),
+                          ),
+                        ],
                       ),
-                    ],
-                  ),
-                ),
-                const SizedBox(width: 6),
-                TextButton.icon(
-                  onPressed: onFollowTap,
-                  style: TextButton.styleFrom(
-                    backgroundColor: author.isFollowing
-                        ? colors.surfaceContainerHigh
-                        : colors.primaryFixed,
-                    foregroundColor: author.isFollowing
-                        ? colors.onSurfaceVariant
-                        : colors.onPrimaryFixed,
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 10,
-                      vertical: 7,
-                    ),
-                    minimumSize: Size.zero,
-                    tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                    visualDensity: VisualDensity.compact,
-                  ),
-                  icon: Icon(
-                    author.isFollowing
-                        ? Icons.check_rounded
-                        : Icons.add_rounded,
-                    size: 16,
-                  ),
-                  label: Text(
-                    author.isFollowing ? 'Following' : 'Follow',
-                    style: const TextStyle(
-                      fontSize: 11,
-                      fontWeight: FontWeight.w700,
                     ),
                   ),
-                ),
-                const SizedBox(width: 4),
-                Material(
-                  color: colors.errorContainer.withValues(alpha: 0.65),
-                  shape: const CircleBorder(),
-                  child: IconButton(
-                    onPressed: onLikeTap,
-                    tooltip: 'Remove from favorites',
-                    constraints: const BoxConstraints.tightFor(
-                      width: 36,
-                      height: 36,
-                    ),
-                    padding: EdgeInsets.zero,
-                    icon: Icon(
+                ],
+
+                const SizedBox(height: 12),
+
+                // Likes, comments and the Read button.
+                Row(
+                  children: [
+                    const Icon(
                       Icons.favorite_rounded,
-                      color: colors.error,
-                      size: 19,
+                      size: 18,
+                      color: AppColors.error,
                     ),
-                  ),
+                    const SizedBox(width: 5),
+                    Text(
+                      '${post.likeCount}',
+                      style: AppFonts.labelMd(color: AppColors.error),
+                    ),
+                    const SizedBox(width: 16),
+                    const Icon(
+                      Icons.chat_bubble_outline_rounded,
+                      size: 18,
+                      color: AppColors.onSurfaceVariant,
+                    ),
+                    const SizedBox(width: 5),
+                    Text(
+                      '${post.commentCount}',
+                      style: AppFonts.labelMd(
+                        color: AppColors.onSurfaceVariant,
+                      ),
+                    ),
+                    const Spacer(),
+                    _ReadButton(onTap: onReadTap),
+                  ],
                 ),
               ],
             ),
-
-            const SizedBox(height: 14),
-
-            // Post title.
-            Text(
-              post.title,
-              style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                    fontWeight: FontWeight.w700,
-                    height: 1.35,
-                    letterSpacing: -0.3,
-                  ),
-            ),
-
-            const SizedBox(height: 7),
-
-            // Post excerpt.
-            Text(
-              post.excerpt,
-              maxLines: 2,
-              overflow: TextOverflow.ellipsis,
-              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                    color: colors.onSurfaceVariant,
-                    height: 1.5,
-                  ),
-            ),
-
-            // Cover image from the API.
-            if (imageUrl != null && imageUrl.trim().isNotEmpty) ...[
-              const SizedBox(height: 14),
-              ClipRRect(
-                borderRadius: BorderRadius.circular(12),
-                child: Image.network(
-                  imageUrl,
-                  width: double.infinity,
-                  height: 176,
-                  fit: BoxFit.cover,
-                  errorBuilder: (_, __, ___) => _imagePlaceholder(colors),
-                ),
-              ),
-            ],
-
-            const SizedBox(height: 14),
-
-            // Likes, comments, and Read action.
-            Row(
-              children: [
-                Icon(
-                  Icons.favorite_rounded,
-                  size: 18,
-                  color: colors.error,
-                ),
-                const SizedBox(width: 5),
-                Text(
-                  '${post.likeCount}',
-                  style: Theme.of(context).textTheme.labelMedium?.copyWith(
-                        color: colors.error,
-                        fontWeight: FontWeight.w700,
-                      ),
-                ),
-                const SizedBox(width: 18),
-                Icon(
-                  Icons.chat_bubble_outline_rounded,
-                  size: 18,
-                  color: colors.onSurfaceVariant,
-                ),
-                const SizedBox(width: 5),
-                Text(
-                  '${post.commentCount}',
-                  style: Theme.of(context).textTheme.labelMedium?.copyWith(
-                        color: colors.onSurfaceVariant,
-                        fontWeight: FontWeight.w600,
-                      ),
-                ),
-                const Spacer(),
-                TextButton.icon(
-                  onPressed: onReadTap,
-                  style: TextButton.styleFrom(
-                    backgroundColor: colors.surfaceContainerHigh,
-                    foregroundColor: colors.onSurface,
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 12,
-                      vertical: 8,
-                    ),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(9),
-                    ),
-                    tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                  ),
-                  label: const Text('Read'),
-                  iconAlignment: IconAlignment.end,
-                  icon: const Icon(
-                    Icons.arrow_forward_rounded,
-                    size: 15,
-                  ),
-                ),
-              ],
-            ),
-          ],
+          ),
         ),
       ),
     );
   }
+}
 
-  Widget _imagePlaceholder(ColorScheme colors) {
+class _ReadButton extends StatelessWidget {
+  const _ReadButton({this.onTap});
+
+  final VoidCallback? onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return Material(
+      color: AppColors.surfaceContainerHigh,
+      borderRadius: BorderRadius.circular(8),
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(8),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text('Read', style: AppFonts.labelSm(color: AppColors.onSurface)),
+              const SizedBox(width: 4),
+              const Icon(
+                Icons.arrow_forward_rounded,
+                size: 14,
+                color: AppColors.onSurface,
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _ImagePlaceholder extends StatelessWidget {
+  const _ImagePlaceholder();
+
+  @override
+  Widget build(BuildContext context) {
     return Container(
-      width: double.infinity,
-      height: 176,
-      color: colors.surfaceContainerHigh,
+      color: AppColors.surfaceContainerHigh,
       alignment: Alignment.center,
-      child: Icon(
+      child: const Icon(
         Icons.image_not_supported_outlined,
-        color: colors.onSurfaceVariant,
+        color: AppColors.onSurfaceVariant,
         size: 32,
       ),
     );

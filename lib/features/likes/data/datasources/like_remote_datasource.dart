@@ -2,11 +2,11 @@ import 'package:dio/dio.dart';
 
 import '../../../../core/constants/api_constants.dart';
 import '../../../../core/utils/paginated.dart';
-import '../../../follow/data/models/public_user_model.dart';
+import '../../../posts/data/models/post_model.dart';
 
 abstract class LikeRemoteDataSource {
-  /// Users who liked the post.
-  Future<Paginated<PublicUserModel>> getLikes(int postId, {int page = 1});
+  /// Posts the logged-in user has liked (GET /user/liked-posts).
+  Future<List<PostModel>> getLikedPosts();
   Future<void> likePost(int postId);
   Future<void> unlikePost(int postId);
 }
@@ -16,12 +16,9 @@ class LikeRemoteDataSourceImpl implements LikeRemoteDataSource {
   LikeRemoteDataSourceImpl(this.dio);
 
   @override
-  Future<Paginated<PublicUserModel>> getLikes(int postId, {int page = 1}) async {
-    final res = await dio.get(
-      ApiConstants.postLikes(postId),
-      queryParameters: {'page': page},
-    );
-    return Paginated.fromResponse(res.data, PublicUserModel.fromJson);
+  Future<List<PostModel>> getLikedPosts() async {
+    final res = await dio.get(ApiConstants.likedPosts);
+    return Paginated.fromResponse(res.data, PostModel.fromJson).items;
   }
 
   @override

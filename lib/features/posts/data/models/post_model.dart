@@ -42,7 +42,8 @@ class PostModel extends Post {
       title: json['title']?.toString() ?? '',
       excerpt: excerpt,
       publishedAt: publishedAt,
-      readTimeMinutes: (json['read_time_minutes'] as num?)?.toInt() ?? 1,
+       readTimeMinutes: (json['read_time_minutes'] as num?)?.toInt() ??
+          _estimateReadTime(excerpt),
       likeCount:
           (json['like_count'] ?? json['likes_count'] as num?)?.toInt() ?? 0,
       commentCount:
@@ -54,5 +55,12 @@ class PostModel extends Post {
       isFeatured: json['is_featured'] as bool? ?? false,
       isLiked: (json['liked_by_user'] ?? json['is_liked']) as bool? ?? false,
     );
+  }
+  /// The API has no read time, so estimate it: about 200 words per minute.
+  static int _estimateReadTime(String text) {
+    final trimmed = text.trim();
+    final words = trimmed.isEmpty ? 0 : trimmed.split(RegExp(r'\s+')).length;
+    final minutes = (words / 200).ceil();
+    return minutes < 1 ? 1 : minutes;
   }
 }
