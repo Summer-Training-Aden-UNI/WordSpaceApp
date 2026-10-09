@@ -88,11 +88,16 @@ class AuthGate extends StatelessWidget {
   }
 }
 
-void _openCreatePost(BuildContext context) {
-  Navigator.push(
-    context,
+Future<void> _openCreatePost(BuildContext homeContext) async {
+  final created = await Navigator.push<Object?>(
+    homeContext,
     MaterialPageRoute(builder: (_) => const CreatePostPage()),
   );
+
+  // The page returns the new post when it was saved.
+  if (created != null && homeContext.mounted) {
+    homeContext.read<PostsCubit>().refresh();
+  }
 }
 
 /// Search page. [onHomeTap] decides how "Home" closes the stack, because
@@ -113,7 +118,7 @@ void _openSearch(
               onHomeTap(searchContext);
 
             case NavTab.create:
-              _openCreatePost(searchContext);
+              _openCreatePost(homeContext);
 
             case NavTab.search:
             case NavTab.favorites:

@@ -58,7 +58,7 @@ class PostRemoteDataSourceImpl implements PostRemoteDataSource {
   }) async {
     final fields = <String, dynamic>{
       'title': title,
-      'body': body,
+      'content': body,
       'status': ?status,
     };
     final Response res;
@@ -81,17 +81,16 @@ class PostRemoteDataSourceImpl implements PostRemoteDataSource {
   }) async {
     final fields = <String, dynamic>{
       'title': title,
-      'body': body,
+      'content': body,
       'status': ?status,
     };
+    
     final Response res;
     if (imagePath != null) {
-      // Laravel does not read multipart data on a real PUT: use POST + _method.
-      fields['_method'] = 'PUT';
       fields[_imageField] = await MultipartFile.fromFile(imagePath);
       res = await dio.post(ApiConstants.post(id), data: FormData.fromMap(fields));
     } else {
-      res = await dio.put(ApiConstants.post(id), data: fields);
+      res = await dio.post(ApiConstants.post(id), data: fields);
     }
     return PostModel.fromJson(unwrap(res.data));
   }
