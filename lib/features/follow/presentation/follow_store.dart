@@ -26,7 +26,7 @@ class FollowStore extends ChangeNotifier {
   /// Call after EVERY fetch of posts so the server stays the source of truth.
   void seedAuthors(Iterable<Author> authors) {
     for (final a in authors) {
-      _following[a.id] = a.isFollowing;
+      _following[a.id.toString()] = a.isFollowing;
     }
     notifyListeners();
   }
@@ -54,6 +54,7 @@ class FollowStore extends ChangeNotifier {
     _inFlight.add(userId);
     notifyListeners();
 
+    final userIdInt = int.parse(userId);
     final result = before
         ? await _unfollow(UnfollowUserParams(userId: id))
         : await _follow(FollowUserParams(userId: id));

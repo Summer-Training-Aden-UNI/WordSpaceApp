@@ -7,11 +7,7 @@ import '../buttons/app_button.dart';
 /// Full-area error state with an optional retry button.
 /// Pass `failure.message` from your domain layer as [message].
 class ErrorView extends StatelessWidget {
-  const ErrorView({
-    super.key,
-    required this.message,
-    this.onRetry,
-  });
+  const ErrorView({super.key, required this.message, this.onRetry});
 
   final String message;
   final VoidCallback? onRetry;
@@ -53,6 +49,7 @@ class ErrorView extends StatelessWidget {
               AppButton(
                 label: 'Try again',
                 icon: Icons.refresh,
+                trailingIcon: Icons.refresh,
                 variant: AppButtonVariant.outlined,
                 fullWidth: false,
                 onPressed: onRetry,

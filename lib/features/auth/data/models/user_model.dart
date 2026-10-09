@@ -3,6 +3,7 @@ import '../../domain/entities/user.dart';
 class UserModel extends User {
   const UserModel({
     required super.id,
+    required super.username,
     required super.name,
     required super.email,
   });
@@ -13,6 +14,7 @@ class UserModel extends User {
     return UserModel(
       id: (j['id'] as num).toInt(),
       name: j['name']?.toString() ?? '',
+      username: j['username']?.toString() ?? '',  
       email: j['email']?.toString() ?? '',
     );
   }

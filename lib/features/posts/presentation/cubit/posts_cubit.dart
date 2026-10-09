@@ -1,138 +1,136 @@
 import 'package:equatable/equatable.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
+import '../../../../core/error/failures.dart';
+import '../../../likes/domain/usecases/like_post.dart';
+import '../../../likes/domain/usecases/unlike_post.dart';
 import '../../domain/entities/post.dart';
-import '../../domain/repositories/posts_repository.dart';
+import '../../domain/usecases/get_posts.dart';
 
 part 'posts_state.dart';
 
-/// Drives the Home feed: loading, pull-to-refresh, like and follow.
+/// Drives the Home feed: loading, refresh, pagination and like.
 class PostsCubit extends Cubit<PostsState> {
-  PostsCubit(this._repository) : super(const PostsInitial());
+  PostsCubit({
+    required GetPosts getPosts,
+    required LikePost likePost,
+    required UnlikePost unlikePost,
+  })  : _getPosts = getPosts,
+        _likePost = likePost,
+        _unlikePost = unlikePost,
+        super(const PostsInitial());
 
-  final PostsRepository _repository;
-
-  static const _loadFailed = 'We couldn\'t load the feed. Check your '
-      'connection and try again.';
-  static const _refreshFailed = 'Couldn\'t refresh. Showing your last feed.';
-  static const _likeFailed = 'Couldn\'t update your like. Try again.';
-  static const _followFailed = 'Couldn\'t update follow. Try again.';
+  final GetPosts _getPosts;
+  final LikePost _likePost;
+  final UnlikePost _unlikePost;
 
   /// First load. Shows the full-screen spinner.
   Future<void> loadPosts() async {
     emit(const PostsLoading());
-    try {
-      final posts = await _repository.getPosts();
-      if (isClosed) return;
-      emit(PostsLoaded(posts: posts));
-    } catch (_) {
-      if (isClosed) return;
-      emit(const PostsError(_loadFailed));
-    }
+    final result = await _getPosts(const GetPostsParams());
+    if (isClosed) return;
+    result.fold(
+      (failure) => emit(PostsError(failure.message)),
+      (p) {
+        // TODO(follow): followStore.seedAuthors(p.items.map((e) => e.author));
+        emit(PostsLoaded(
+          posts: p.items,
+          page: p.currentPage,
+          hasMore: p.hasMore,
+        ));
+      },
+    );
   }
 
   /// Pull-to-refresh. Keeps the current list on screen if it fails.
   Future<void> refresh() async {
-    try {
-      final posts = await _repository.getPosts();
-      if (isClosed) return;
-      emit(PostsLoaded(posts: posts));
-    } catch (_) {
-      if (isClosed) return;
-      final current = state;
-      if (current is PostsLoaded) {
-        emit(current.copyWith(actionError: _refreshFailed));
-      } else {
-        emit(const PostsError(_loadFailed));
-      }
-    }
+    final result = await _getPosts(const GetPostsParams());
+    if (isClosed) return;
+    result.fold(
+      (failure) {
+        if (state is PostsLoaded) {
+          _updateLoaded((s) => s.copyWith(actionError: failure.message));
+        } else {
+          emit(PostsError(failure.message));
+        }
+      },
+      (p) => emit(PostsLoaded(
+        posts: p.items,
+        page: p.currentPage,
+        hasMore: p.hasMore,
+      )),
+    );
   }
 
-  /// Optimistic like: the heart flips immediately and rolls back on failure.
-  Future<void> toggleLike(String postId) async {
-    final current = state;
-    if (current is! PostsLoaded) return;
-    final original = current.posts.where((p) => p.id == postId).firstOrNull;
-    if (original == null) return;
+  /// Infinite scroll: loads the next page and appends it.
+  Future<void> loadMore() async {
+    final s = state;
+    if (s is! PostsLoaded || !s.hasMore || s.isLoadingMore) return;
 
-    final nextLiked = !original.isLiked;
-    _updateLoaded(
-      (s) => s.copyWith(
-        posts: _mapPost(
-          s.posts,
-          postId,
-          (p) => p.copyWith(
-            isLiked: nextLiked,
-            likeCount: p.likeCount + (nextLiked ? 1 : -1),
-          ),
+    emit(s.copyWith(isLoadingMore: true));
+    final result = await _getPosts(GetPostsParams(page: s.page + 1));
+    if (isClosed) return;
+
+    result.fold(
+      (failure) => _updateLoaded(
+        (s) => s.copyWith(isLoadingMore: false, actionError: failure.message),
+      ),
+      (p) => _updateLoaded(
+        (s) => s.copyWith(
+          posts: [...s.posts, ...p.items],
+          page: p.currentPage,
+          hasMore: p.hasMore,
+          isLoadingMore: false,
         ),
       ),
     );
+  }
 
-    try {
-      await _repository.setLike(postId: postId, liked: nextLiked);
-    } catch (_) {
-      _updateLoaded(
-        (s) => s.copyWith(
-          posts: _mapPost(
-            s.posts,
-            postId,
-            (p) => p.copyWith(
-              isLiked: original.isLiked,
-              likeCount: original.likeCount,
-            ),
+  /// Optimistic like: the heart flips immediately, the request is sent,
+  /// and the change is rolled back if it fails.
+  Future<void> toggleLike(int postId) async {
+    final s = state;
+    if (s is! PostsLoaded) return;
+    final original = s.posts.where((p) => p.id == postId).firstOrNull;
+    if (original == null) return;
+
+    final liked = !original.isLiked;
+    _replace(original.copyWith(
+      isLiked: liked,
+      likeCount: original.likeCount + (liked ? 1 : -1),
+    ));
+
+    final result = liked
+        ? await _likePost(LikePostParams(postId: postId))
+        : await _unlikePost(UnlikePostParams(postId: postId));
+    if (isClosed) return;
+
+    result.fold(
+      (failure) {
+        _replace(original); // roll back
+        _updateLoaded(
+          (s) => s.copyWith(
+            actionError:
+                failure is AuthFailure ? 'Sign in to like posts.' : failure.message,
           ),
-          actionError: _likeFailed,
-        ),
-      );
-    }
-  }
-
-  /// Not optimistic: the button shows a spinner while the request runs, then
-  /// every post by that author is updated.
-  Future<void> toggleFollow(String authorId) async {
-    final current = state;
-    if (current is! PostsLoaded) return;
-    if (current.followInProgress.contains(authorId)) return;
-    final author = current.posts
-        .where((p) => p.author.id == authorId)
-        .firstOrNull
-        ?.author;
-    if (author == null) return;
-
-    final nextFollowing = !author.isFollowing;
-    _updateLoaded(
-      (s) => s.copyWith(followInProgress: {...s.followInProgress, authorId}),
+        );
+      },
+      (_) {},
     );
-
-    try {
-      await _repository.setFollow(authorId: authorId, follow: nextFollowing);
-      _updateLoaded(
-        (s) => s.copyWith(
-          posts: [
-            for (final p in s.posts)
-              p.author.id == authorId
-                  ? p.copyWith(
-                      author: p.author.copyWith(isFollowing: nextFollowing),
-                    )
-                  : p,
-          ],
-          followInProgress: {...s.followInProgress}..remove(authorId),
-        ),
-      );
-    } catch (_) {
-      _updateLoaded(
-        (s) => s.copyWith(
-          followInProgress: {...s.followInProgress}..remove(authorId),
-          actionError: _followFailed,
-        ),
-      );
-    }
   }
+
+  /// Called when the detail page returns an updated post.
+  void syncPost(Post post) => _replace(post);
 
   // ---------------------------------------------------------------------------
   // Helpers
   // ---------------------------------------------------------------------------
+
+  void _replace(Post post) => _updateLoaded(
+        (s) => s.copyWith(
+          posts: [for (final p in s.posts) p.id == post.id ? post : p],
+        ),
+      );
 
   /// Re-reads the *current* state (so concurrent actions don't overwrite each
   /// other) and emits the updated one. No-op unless the feed is loaded.
@@ -141,11 +139,4 @@ class PostsCubit extends Cubit<PostsState> {
     if (isClosed || s is! PostsLoaded) return;
     emit(update(s));
   }
-
-  List<Post> _mapPost(
-    List<Post> posts,
-    String postId,
-    Post Function(Post) update,
-  ) =>
-      [for (final p in posts) p.id == postId ? update(p) : p];
 }

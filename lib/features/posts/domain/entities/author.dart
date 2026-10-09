@@ -10,7 +10,7 @@ class Author extends Equatable {
     this.isFollowing = false,
   });
 
-  final String id;
+  final int id;
   final String name;
 
   /// Short role line under the name, e.g. "Lead Architect". Optional.

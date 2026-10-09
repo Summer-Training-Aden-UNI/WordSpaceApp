@@ -19,12 +19,12 @@ class AuthCubit extends Cubit<AuthState> {
     required Logout logout,
     required GetCurrentUser getCurrentUser,
     required TokenStorage tokenStorage,
-  })  : _login = login,
-        _register = register,
-        _logout = logout,
-        _getCurrentUser = getCurrentUser,
-        _tokenStorage = tokenStorage,
-        super(const AuthInitial());
+  }) : _login = login,
+       _register = register,
+       _logout = logout,
+       _getCurrentUser = getCurrentUser,
+       _tokenStorage = tokenStorage,
+       super(const AuthInitial());
 
   final Login _login;
   final Register _register;
@@ -49,13 +49,10 @@ class AuthCubit extends Cubit<AuthState> {
   Future<Failure?> login(String email, String password) async {
     final result = await _login(LoginParams(email: email, password: password));
     if (isClosed) return null;
-    return result.fold<Failure?>(
-      (f) => f,
-      (user) {
-        emit(AuthAuthenticated(user));
-        return null;
-      },
-    );
+    return result.fold<Failure?>((f) => f, (user) {
+      emit(AuthAuthenticated(user));
+      return null;
+    });
   }
 
   Future<Failure?> register({
@@ -63,21 +60,22 @@ class AuthCubit extends Cubit<AuthState> {
     required String email,
     required String password,
     required String passwordConfirmation,
+    required String username,
   }) async {
-    final result = await _register(RegisterParams(
-      name: name,
-      email: email,
-      password: password,
-      passwordConfirmation: passwordConfirmation,
-    ));
-    if (isClosed) return null;
-    return result.fold<Failure?>(
-      (f) => f,
-      (user) {
-        emit(AuthAuthenticated(user));
-        return null;
-      },
+    final result = await _register(
+      RegisterParams(
+        name: name,
+        email: email,
+        username: username,
+        password: password,
+        passwordConfirmation: passwordConfirmation,
+      ),
     );
+    if (isClosed) return null;
+    return result.fold<Failure?>((f) => f, (user) {
+      emit(AuthAuthenticated(user));
+      return null;
+    });
   }
 
   Future<void> logout() async {

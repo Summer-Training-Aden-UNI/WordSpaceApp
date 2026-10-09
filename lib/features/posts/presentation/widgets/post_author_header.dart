@@ -5,6 +5,7 @@ import '../../../../core/theme/app_fonts.dart';
 import '../../../../core/widgets/widgets.dart';
 import '../../domain/entities/author.dart';
 import '../utils/time_ago.dart';
+import 'author_follow_button.dart';
 
 /// Top row of a post card:
 /// avatar · name + "role · 14d ago" · [FEATURED badge] · Follow button.
@@ -14,15 +15,11 @@ class PostAuthorHeader extends StatelessWidget {
     required this.author,
     required this.publishedAt,
     required this.isFeatured,
-    required this.isFollowLoading,
-    required this.onFollowTap,
   });
 
   final Author author;
   final DateTime publishedAt;
   final bool isFeatured;
-  final bool isFollowLoading;
-  final VoidCallback onFollowTap;
 
   String get _subtitle {
     final time = timeAgo(publishedAt);
@@ -59,15 +56,11 @@ class PostAuthorHeader extends StatelessWidget {
             ],
           ),
         ),
-        if (isFeatured) ...[
-          const SizedBox(width: 8),
-          const _FeaturedBadge(),
-        ],
+        if (isFeatured) ...[const SizedBox(width: 8), const _FeaturedBadge()],
         const SizedBox(width: 8),
-        FollowButton(
-          isFollowing: author.isFollowing,
-          isLoading: isFollowLoading,
-          onPressed: onFollowTap,
+        AuthorFollowButton(
+          authorId: author.id,
+          initialIsFollowing: author.isFollowing,
         ),
       ],
     );
@@ -91,10 +84,7 @@ class _FeaturedBadge extends StatelessWidget {
         children: [
           const Icon(Icons.auto_awesome, size: 14, color: AppColors.onPrimary),
           const SizedBox(width: 4),
-          Text(
-            'FEATURED',
-            style: AppFonts.labelMd(color: AppColors.onPrimary),
-          ),
+          Text('FEATURED', style: AppFonts.labelMd(color: AppColors.onPrimary)),
         ],
       ),
     );

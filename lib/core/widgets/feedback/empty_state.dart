@@ -57,6 +57,7 @@ class EmptyState extends StatelessWidget {
               AppButton(
                 label: actionLabel!,
                 fullWidth: false,
+                trailingIcon: Icons.arrow_forward_rounded,
                 onPressed: onAction,
               ),
             ],
