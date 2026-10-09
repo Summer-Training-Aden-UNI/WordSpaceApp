@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../../../../core/widgets/navigation/app_top_bar.dart';
+
 import '../../../../core/widgets/widgets.dart';
 import '../../domain/entities/post.dart';
 import '../cubit/posts_cubit.dart';

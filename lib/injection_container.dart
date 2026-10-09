@@ -12,12 +12,14 @@ import 'features/auth/domain/usecases/get_current_user.dart';
 import 'features/auth/domain/usecases/login.dart';
 import 'features/auth/domain/usecases/logout.dart';
 import 'features/auth/domain/usecases/register.dart';
+import 'features/auth/presentation/cubit/auth_cubit.dart';
 
 // search
 import 'features/search/data/datasources/search_remote_datasource.dart';
 import 'features/search/data/repositories/search_repository_impl.dart';
 import 'features/search/domain/repositories/search_repository.dart';
 import 'features/search/domain/usecases/search.dart';
+
 
 // posts
 import 'features/posts/data/datasources/post_remote_datasource.dart';
@@ -29,6 +31,7 @@ import 'features/posts/domain/usecases/create_post.dart';
 import 'features/posts/domain/usecases/update_post.dart';
 import 'features/posts/domain/usecases/delete_post.dart';
   import 'features/posts/presentation/cubit/posts_cubit.dart';
+  import 'features/posts/presentation/cubit/create_post_cubit.dart';
 // comments
 import 'features/comments/data/datasources/comment_remote_datasource.dart';
 import 'features/comments/data/repositories/comment_repository_impl.dart';
@@ -65,6 +68,7 @@ import 'features/profile/domain/repositories/profile_repository.dart';
 import 'features/profile/domain/usecases/get_profile.dart';
 import 'features/profile/domain/usecases/update_profile.dart';
 
+
 final sl = GetIt.instance;
 
 Future<void> init() async {
@@ -84,6 +88,13 @@ Future<void> init() async {
   sl.registerLazySingleton(() => Register(sl()));
   sl.registerLazySingleton(() => Logout(sl()));
   sl.registerLazySingleton(() => GetCurrentUser(sl()));
+  sl.registerLazySingleton(() => AuthCubit(
+      login: sl(),
+      register: sl(),
+      logout: sl(),
+      getCurrentUser: sl(),
+      tokenStorage: sl(),
+    ));
 
   // ---- search ----
   sl.registerLazySingleton<SearchRemoteDataSource>(
@@ -96,6 +107,7 @@ Future<void> init() async {
   sl.registerLazySingleton<PostRemoteDataSource>(
     () => PostRemoteDataSourceImpl(sl<DioClient>().dio),
   );
+  sl.registerFactory(() => CreatePostCubit(createPost: sl()));
     sl.registerFactory(() => PostsCubit(
         getPosts: sl(), likePost: sl(), unlikePost: sl()));
   sl.registerLazySingleton<PostRepository>(() => PostRepositoryImpl(sl()));

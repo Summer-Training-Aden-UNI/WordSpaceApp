@@ -9,6 +9,7 @@ abstract class AuthRemoteDataSource {
   Future<AuthResponseModel> register({
     required String name,
     required String email,
+    required String username,
     required String password,
     required String passwordConfirmation,
   });
@@ -33,6 +34,7 @@ class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
   Future<AuthResponseModel> register({
     required String name,
     required String email,
+    required String username,
     required String password,
     required String passwordConfirmation,
   }) async {
@@ -41,6 +43,7 @@ class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
       data: {
         'name': name,
         'email': email,
+        'username': username,
         'password': password,
         'password_confirmation': passwordConfirmation,
       },

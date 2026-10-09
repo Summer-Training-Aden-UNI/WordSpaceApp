@@ -15,6 +15,7 @@ class Register implements UseCase<User, RegisterParams> {
       repository.register(
         name: params.name,
         email: params.email,
+        username: params.username,
         password: params.password,
         passwordConfirmation: params.passwordConfirmation,
       );
@@ -23,12 +24,14 @@ class Register implements UseCase<User, RegisterParams> {
 class RegisterParams extends Equatable {
   final String name;
   final String email;
+  final String username;
   final String password;
   final String passwordConfirmation;
 
   const RegisterParams({
     required this.name,
     required this.email,
+    required this.username,
     required this.password,
     required this.passwordConfirmation,
   });
