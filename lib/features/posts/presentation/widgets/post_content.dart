@@ -64,7 +64,10 @@ class PostContent extends StatelessWidget {
             isFeatured: post.isFeatured,
           ),
         const SizedBox(height: 20),
-        Text(post.excerpt, style: AppFonts.bodyLg(color: AppColors.onSurface)),
+        Text(
+          post.body.trim().isNotEmpty ? post.body : post.excerpt,
+          style: AppFonts.bodyLg(color: AppColors.onSurface),
+        ),
       ],
     );
   }

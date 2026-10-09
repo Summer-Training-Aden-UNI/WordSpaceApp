@@ -1,8 +1,9 @@
+
 import 'package:equatable/equatable.dart';
 
 import 'author.dart';
 
-/// A post as shown in the Home feed.
+/// A post as shown in the Home feed and Post Details page.
 class Post extends Equatable {
   const Post({
     required this.id,
@@ -13,6 +14,7 @@ class Post extends Equatable {
     required this.readTimeMinutes,
     required this.likeCount,
     required this.commentCount,
+    this.body = '',
     this.coverImageUrl,
     this.tag,
     this.isFeatured = false,
@@ -22,20 +24,25 @@ class Post extends Equatable {
   final int id;
   final Author author;
   final String title;
+
+  /// Short text displayed in the Home feed.
   final String excerpt;
+
+  /// Full post text displayed on the Post Details page.
+  final String body;
+
   final DateTime publishedAt;
   final int readTimeMinutes;
   final int likeCount;
   final int commentCount;
   final String? coverImageUrl;
-
-  /// Short category label shown on the cover, e.g. "Deep Technical Dive".
   final String? tag;
   final bool isFeatured;
   final bool isLiked;
 
   Post copyWith({
     Author? author,
+    String? body,
     int? likeCount,
     bool? isLiked,
   }) =>
@@ -44,6 +51,7 @@ class Post extends Equatable {
         author: author ?? this.author,
         title: title,
         excerpt: excerpt,
+        body: body ?? this.body,
         publishedAt: publishedAt,
         readTimeMinutes: readTimeMinutes,
         likeCount: likeCount ?? this.likeCount,
@@ -60,6 +68,7 @@ class Post extends Equatable {
         author,
         title,
         excerpt,
+        body,
         publishedAt,
         readTimeMinutes,
         likeCount,

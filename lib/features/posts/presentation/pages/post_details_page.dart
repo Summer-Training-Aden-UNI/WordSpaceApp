@@ -1,4 +1,3 @@
-
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
@@ -36,21 +35,18 @@ class PostDetailsPage extends StatelessWidget {
       child: Scaffold(
         appBar: AppTopBar(
           title: 'Post Details',
+          showBack: true,
           userName: userName,
           userImageUrl: userImageUrl,
         ),
         body: BlocBuilder<PostDetailsCubit, PostDetailsState>(
           builder: (context, state) {
             if (state is PostDetailsError) {
-              return Center(
-                child: Text(state.message),
-              );
+              return Center(child: Text(state.message));
             }
 
             if (state is! PostDetailsLoaded) {
-              return const Center(
-                child: CircularProgressIndicator(),
-              );
+              return const Center(child: CircularProgressIndicator());
             }
 
             final currentPost = state.post;
@@ -58,19 +54,11 @@ class PostDetailsPage extends StatelessWidget {
             return SafeArea(
               top: false,
               child: ListView(
-                padding: const EdgeInsets.fromLTRB(
-                  16,
-                  16,
-                  16,
-                  24,
-                ),
+                padding: const EdgeInsets.fromLTRB(16, 16, 16, 24),
                 children: [
                   PostContent(post: currentPost),
                   const SizedBox(height: 18),
-                  PostAuthorCard(
-                    post: currentPost,
-                    onFollowTap: onFollowTap,
-                  ),
+                  PostAuthorCard(post: currentPost, onFollowTap: onFollowTap),
                   const SizedBox(height: 24),
                   PostEngagementBar(post: currentPost),
                   const SizedBox(height: 28),

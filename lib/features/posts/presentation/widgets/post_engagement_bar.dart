@@ -1,3 +1,4 @@
+
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
@@ -16,65 +17,85 @@ class PostEngagementBar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.symmetric(
-        horizontal: 16,
-        vertical: 14,
-      ),
-      decoration: BoxDecoration(
-        color: AppColors.surfaceContainerLowest,
-        borderRadius: BorderRadius.circular(18),
-        border: Border.all(color: AppColors.borderLight),
-      ),
-      child: Row(
-        children: [
-          InkWell(
-            borderRadius: BorderRadius.circular(12),
-            onTap: () {
-              context.read<PostsCubit>().toggleLike(post.id);
-            },
-            child: Padding(
-              padding: const EdgeInsets.symmetric(
-                horizontal: 4,
-                vertical: 6,
-              ),
-              child: Row(
-                children: [
-                  Icon(
-                    post.isLiked
-                        ? Icons.favorite
-                        : Icons.favorite_border,
-                    color: post.isLiked
-                        ? AppColors.error
-                        : AppColors.slateMuted,
-                    size: 23,
-                  ),
-                  const SizedBox(width: 8),
-                  Text(
-                    '${post.likeCount}',
-                    style: AppFonts.labelMd(
-                      color: AppColors.onSurface,
-                    ),
-                  ),
-                ],
-              ),
+    return BlocBuilder<PostsCubit, PostsState>(
+      builder: (context, state) {
+        // Find the latest version of this post in PostsCubit.
+        var currentPost = post;
+
+        if (state is PostsLoaded) {
+          for (final item in state.posts) {
+            if (item.id == post.id) {
+              currentPost = item;
+              break;
+            }
+          }
+        }
+
+        return Container(
+          padding: const EdgeInsets.symmetric(
+            horizontal: 16,
+            vertical: 14,
+          ),
+          decoration: BoxDecoration(
+            color: AppColors.surfaceContainerLowest,
+            borderRadius: BorderRadius.circular(18),
+            border: Border.all(
+              color: AppColors.borderLight,
             ),
           ),
-          const SizedBox(width: 24),
-          const Icon(
-            Icons.mode_comment_outlined,
-            color: AppColors.slateMuted,
-            size: 22,
+          child: Row(
+            children: [
+              InkWell(
+                borderRadius: BorderRadius.circular(12),
+                onTap: () {
+                  context
+                      .read<PostsCubit>()
+                      .toggleLike(currentPost.id);
+                },
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 4,
+                    vertical: 6,
+                  ),
+                  child: Row(
+                    children: [
+                      Icon(
+                        currentPost.isLiked
+                            ? Icons.favorite
+                            : Icons.favorite_border,
+                        color: currentPost.isLiked
+                            ? AppColors.error
+                            : AppColors.slateMuted,
+                        size: 23,
+                      ),
+                      const SizedBox(width: 8),
+                      Text(
+                        '${currentPost.likeCount}',
+                        style: AppFonts.labelMd(
+                          color: AppColors.onSurface,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+              const SizedBox(width: 24),
+              const Icon(
+                Icons.mode_comment_outlined,
+                color: AppColors.slateMuted,
+                size: 22,
+              ),
+              const SizedBox(width: 8),
+              Text(
+                '${currentPost.commentCount}',
+                style: AppFonts.labelMd(
+                  color: AppColors.onSurface,
+                ),
+              ),
+            ],
           ),
-          const SizedBox(width: 8),
-          Text(
-            '${post.commentCount}',
-            style: AppFonts.labelMd(
-              color: AppColors.onSurface,
-            ),
-          ),
-        ],
-      ),
+        );
+      },
     );
   }
 }
