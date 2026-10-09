@@ -153,18 +153,13 @@ class AppTopBar extends StatelessWidget implements PreferredSizeWidget {
   }
 
   Widget _buildLogo() {
-    return Container(
-      width: 32,
-      height: 32,
-      decoration: BoxDecoration(
-        color: AppColors.brandEmerald,
+      return ClipRRect(
         borderRadius: BorderRadius.circular(8),
-      ),
-      child: Center(
-        child: Text(
-          'W',
-          style: AppFonts.labelLg(color: AppColors.onPrimary),
-        ),
+        child: Image.asset(
+          'assets/images/logo.png',
+          width: 48,
+          height: 48,
+          fit: BoxFit.cover,
       ),
     );
   }

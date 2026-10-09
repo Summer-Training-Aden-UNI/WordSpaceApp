@@ -49,26 +49,15 @@ class BrandHeader extends StatelessWidget {
     return Column(
       mainAxisSize: MainAxisSize.min,
       children: [
-        Container(
-          width: 56,
-          height: 56,
-          decoration: BoxDecoration(
-            color: AppColors.primary,
-            borderRadius: BorderRadius.circular(16),
-            boxShadow: [
-              BoxShadow(
-                color: AppColors.primary.withValues(alpha: 0.24),
-                blurRadius: 16,
-                offset: const Offset(0, 4),
-              ),
-            ],
-          ),
-          alignment: Alignment.center,
-          child: Text(
-            'W',
-            style: AppFonts.headlineLg(color: AppColors.onPrimary),
-          ),
+        ClipRRect(
+          borderRadius: BorderRadius.circular(16),
+          child: Image.asset(
+            'assets/images/logo.png',
+          width: 75,
+          height: 75,
+          fit: BoxFit.cover,
         ),
+      ),
         const SizedBox(height: 8),
         Row(
           mainAxisSize: MainAxisSize.min,
