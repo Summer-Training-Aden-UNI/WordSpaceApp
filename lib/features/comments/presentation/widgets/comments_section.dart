@@ -11,27 +11,19 @@ import 'comment_input.dart';
 import 'comment_tile.dart';
 
 /// The whole comments area of the Post Details page.
-///
-/// ```dart
-/// CommentsSection(
-///   postId: post.id,                 // int
-///   currentUserId: me.id,            // lets the user delete their own comments
-///   initialCount: post.commentCount,
-/// )
-/// ```
-///
-/// It is NOT a scrolling list: it is a Column meant to live inside the page's
-/// own scroll view (SingleChildScrollView / CustomScrollView).
+
 class CommentsSection extends StatelessWidget {
   const CommentsSection({
     super.key,
     required this.postId,
     this.currentUserId,
+    this.currentUserName,
     this.initialCount = 0,
   });
 
   final int postId;
   final int? currentUserId;
+    final String? currentUserName;
   final int initialCount;
 
   @override
@@ -41,6 +33,8 @@ class CommentsSection extends StatelessWidget {
       create: (_) => CommentsCubit(
         postId: postId,
         initialCount: initialCount,
+        currentUserId: currentUserId,
+        currentUserName: currentUserName,
         getComments: sl(),
         addComment: sl(),
         deleteComment: sl(),
