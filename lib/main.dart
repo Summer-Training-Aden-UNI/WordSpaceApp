@@ -1,3 +1,4 @@
+
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
@@ -7,9 +8,11 @@ import 'features/auth/presentation/cubit/auth_cubit.dart';
 import 'features/auth/presentation/pages/welcome.dart';
 import 'features/posts/presentation/cubit/posts_cubit.dart';
 import 'features/posts/presentation/pages/home_page.dart';
-import 'injection_container.dart' as di;
 import 'features/posts/presentation/pages/create_post_page.dart';
+import 'features/likes/presentation/cubit/favorites_cubit.dart';
+import 'features/likes/presentation/pages/favorites_page.dart';
 import 'features/search/presentation/pages/search_page.dart';
+import 'injection_container.dart' as di;
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -41,68 +44,168 @@ class AuthGate extends StatelessWidget {
   Widget build(BuildContext context) {
     return BlocBuilder<AuthCubit, AuthState>(
       builder: (context, state) => switch (state) {
-        AuthInitial() => const Scaffold(body: LoadingIndicator()),
-        AuthUnauthenticated() => const WelcomePage(),
-        AuthAuthenticated() || AuthGuest() => BlocProvider(
-          // The key rebuilds the feed when a guest signs in, so the posts
-          // are reloaded with the user's token (liked state, etc.).
-          key: ValueKey(state.runtimeType),
-          create: (_) => di.sl<PostsCubit>()..loadPosts(),
-          child: HomePage(
-            onNavTabSelected: (tab) {
-              switch (tab) {
-                case NavTab.home:
-                  break;
-
-                case NavTab.create:
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(builder: (_) => const CreatePostPage()),
-                  );
-                  break;
-                case NavTab.favorites:
-                  // TODO: Navigate to FavoritesPage.
-                  break;
-
-                                case NavTab.search:
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (searchContext) => SearchPage(
-                        onNavTabSelected: (searchTab) {
-                          switch (searchTab) {
-                            case NavTab.home:
-                              Navigator.pop(searchContext);
-                              break;
-                            case NavTab.create:
-                              Navigator.push(
-                                searchContext,
-                                MaterialPageRoute(
-                                  builder: (_) => const CreatePostPage(),
-                                ),
-                              );
-                              break;
-                            case NavTab.search:
-                            case NavTab.favorites:
-                            case NavTab.profile:
-                              break;
-                          }
-                        },
-                      ),
-                    ),
-                  );
-                  break;
-
-                case NavTab.profile:
-                  // TODO: Navigate to ProfilePage.
-                  break;
-              }
-            },
-            onAvatarTap: () {
-              // TODO: Navigate to the user's profile.
-            },
+        AuthInitial() => const Scaffold(
+            body: LoadingIndicator(),
           ),
-        ),
+
+        AuthUnauthenticated() => const WelcomePage(),
+
+        AuthAuthenticated() || AuthGuest() => BlocProvider(
+            // Rebuild the feed when the user changes from guest to signed in.
+            key: ValueKey(state.runtimeType),
+            create: (_) => di.sl<PostsCubit>()..loadPosts(),
+            child: Builder(
+              builder: (homeContext) {
+                return HomePage(
+                  onNavTabSelected: (tab) {
+                    switch (tab) {
+                      case NavTab.home:
+                        // Already on HomePage.
+                        break;
+
+                      case NavTab.create:
+                        Navigator.push(
+                          homeContext,
+                          MaterialPageRoute(
+                            builder: (_) => const CreatePostPage(),
+                          ),
+                        );
+                        break;
+
+                      case NavTab.favorites:
+                        final postsCubit =
+                            homeContext.read<PostsCubit>();
+
+                        Navigator.push(
+                          homeContext,
+                          MaterialPageRoute(
+                            builder: (_) => MultiBlocProvider(
+                              providers: [
+                                BlocProvider<PostsCubit>.value(
+                                  value: postsCubit,
+                                ),
+                                BlocProvider<FavoritesCubit>(
+                                  create: (_) =>
+                                      FavoritesCubit(postsCubit),
+                                ),
+                              ],
+                              child: FavoritesPage(
+                                onNavTabSelected: (favoritesTab) {
+                                  switch (favoritesTab) {
+                                    case NavTab.home:
+                                      Navigator.pop(homeContext);
+                                      break;
+
+                                    case NavTab.create:
+                                      Navigator.push(
+                                        homeContext,
+                                        MaterialPageRoute(
+                                          builder: (_) =>
+                                              const CreatePostPage(),
+                                        ),
+                                      );
+                                      break;
+
+                                    case NavTab.favorites:
+                                      // Already on FavoritesPage.
+                                      break;
+
+                                    case NavTab.search:
+                                      Navigator.push(
+                                        homeContext,
+                                        MaterialPageRoute(
+                                          builder: (searchContext) =>
+                                              SearchPage(
+                                            onNavTabSelected: (searchTab) {
+                                              switch (searchTab) {
+                                                case NavTab.home:
+                                                  Navigator.pop(
+                                                    searchContext,
+                                                  );
+                                                  Navigator.pop(
+                                                    homeContext,
+                                                  );
+                                                  break;
+
+                                                case NavTab.create:
+                                                  Navigator.push(
+                                                    searchContext,
+                                                    MaterialPageRoute(
+                                                      builder: (_) =>
+                                                          const CreatePostPage(),
+                                                    ),
+                                                  );
+                                                  break;
+
+                                                case NavTab.search:
+                                                case NavTab.favorites:
+                                                case NavTab.profile:
+                                                  break;
+                                              }
+                                            },
+                                          ),
+                                        ),
+                                      );
+                                      break;
+
+                                    case NavTab.profile:
+                                      // TODO: Navigate to ProfilePage.
+                                      break;
+                                  }
+                                },
+                                onAvatarTap: () {
+                                  // TODO: Navigate to the user's profile.
+                                },
+                              ),
+                            ),
+                          ),
+                        );
+                        break;
+
+                      case NavTab.search:
+                        Navigator.push(
+                          homeContext,
+                          MaterialPageRoute(
+                            builder: (searchContext) => SearchPage(
+                              onNavTabSelected: (searchTab) {
+                                switch (searchTab) {
+                                  case NavTab.home:
+                                    Navigator.pop(searchContext);
+                                    break;
+
+                                  case NavTab.create:
+                                    Navigator.push(
+                                      searchContext,
+                                      MaterialPageRoute(
+                                        builder: (_) =>
+                                            const CreatePostPage(),
+                                      ),
+                                    );
+                                    break;
+
+                                  case NavTab.search:
+                                  case NavTab.favorites:
+                                  case NavTab.profile:
+                                    break;
+                                }
+                              },
+                            ),
+                          ),
+                        );
+                        break;
+
+                      case NavTab.profile:
+                        // TODO: Navigate to ProfilePage.
+                        break;
+                    }
+                  },
+                  onAvatarTap: () {
+                    // TODO: Navigate to the user's profile.
+                  },
+                );
+              },
+            ),
+          ),
       },
     );
   }
