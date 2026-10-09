@@ -2,8 +2,8 @@ import 'package:flutter/material.dart';
 
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_fonts.dart';
-import '../../../posts/presentation/utils/time_ago.dart';
 import '../../../../core/widgets/widgets.dart';
+import '../../../posts/presentation/utils/time_ago.dart';
 import '../../domain/entities/comment.dart';
 
 /// One comment row: avatar, name, time, body and (for your own comments)
@@ -54,7 +54,7 @@ class CommentTile extends StatelessWidget {
                         Text(
                           timeAgo(created),
                         style: AppFonts.labelSm(color: AppColors.slateMuted),
-                        ),//
+                        ),
                       ],
                     ],
                   ),

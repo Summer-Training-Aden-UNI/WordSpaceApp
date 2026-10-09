@@ -283,17 +283,18 @@ class _SectionTitle extends StatelessWidget {
         Icon(icon, size: 20, color: AppColors.brandEmerald),
         const SizedBox(width: 8),
         Text(title, style: AppFonts.labelLg(color: AppColors.slate)),
-        if (trailing != null) ...[
-          const Spacer(),
-          Flexible(
+        
+       if (trailing != null)
+          Expanded(
             child: Text(
               trailing!,
+              textAlign: TextAlign.end,
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
               style: AppFonts.labelSm(color: AppColors.slateMuted),
             ),
           ),
-        ],
+        
       ],
     );
   }

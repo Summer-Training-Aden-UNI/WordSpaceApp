@@ -6,7 +6,7 @@ import '../../../../core/utils/paginated.dart';
 import '../models/comment_model.dart';
 
 // Name of the request field Laravel validates for the comment text.
-const _bodyField = 'body';
+const _bodyField = 'content';
 
 abstract class CommentRemoteDataSource {
   Future<Paginated<CommentModel>> getComments(int postId, {int page = 1});

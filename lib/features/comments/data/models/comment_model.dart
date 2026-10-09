@@ -1,3 +1,4 @@
+import '../../../../core/utils/json_helpers.dart';
 import '../../domain/entities/comment.dart';
 
 class CommentModel extends Comment {
@@ -9,14 +10,17 @@ class CommentModel extends Comment {
     super.createdAt,
   });
 
-  // NOTE: field names are guesses. Check them against the comment Resource.
+ 
+  /// GET  -> { id, content, user_id, post_id, author: {id, name, ...}, created_at }
+  /// POST -> { id, content, user_id, post_id, created_at }  (no author)
   factory CommentModel.fromJson(Map<String, dynamic> json) {
-    final user = json['author'] ?? json['user'];
+    final author = json['author'];
     return CommentModel(
       id: (json['id'] as num).toInt(),
-      body: (json['body'] ?? json['content'] ?? json['comment'])?.toString() ?? '',
-      authorId: user is Map ? (user['id'] as num?)?.toInt() : null,
-      authorName: user is Map ? (user['name']?.toString() ?? '') : '',
+      body: json['content']?.toString() ?? '',
+      // Falls back to user_id when the response has no author object.
+      authorId: asInt((author is Map ? author['id'] : null) ?? json['user_id']),
+      authorName: author is Map ? (author['name']?.toString() ?? '') : '',
       createdAt: json['created_at']?.toString(),
     );
   }

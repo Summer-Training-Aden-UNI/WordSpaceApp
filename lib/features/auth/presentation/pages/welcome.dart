@@ -20,20 +20,15 @@ class WelcomePage extends StatelessWidget {
           child: Column(
             children: [
               const Spacer(flex: 2),
-              Container(
-                width: 72,
-                height: 72,
-                decoration: BoxDecoration(
-                  color: AppColors.brandEmerald,
-                  borderRadius: BorderRadius.circular(18),
-                ),
-                child: Center(
-                  child: Text(
-                    'W',
-                    style: AppFonts.headlineXl(color: AppColors.onPrimary),
-                  ),
-                ),
+             ClipRRect(
+                borderRadius: BorderRadius.circular(16),
+                child: Image.asset(
+                  'assets/images/logo.png',
+                width: 120,
+                height: 120,
+                fit: BoxFit.cover,
               ),
+            ),
               const SizedBox(height: 20),
               Text.rich(
                 TextSpan(

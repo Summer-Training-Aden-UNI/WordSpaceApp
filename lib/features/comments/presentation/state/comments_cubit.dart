@@ -1,13 +1,12 @@
 import 'package:flutter_bloc/flutter_bloc.dart';
 
+import '../../domain/entities/comment.dart';
 import '../../../../core/error/failures.dart';
 import '../../domain/usecases/add_comment.dart';
 import '../../domain/usecases/delete_comment.dart';
 import '../../domain/usecases/get_comments.dart';
 import 'comments_state.dart';
 
-/// Comments of ONE post. Create one per open post:
-/// `CommentsCubit(postId: id, ...)..load()`.
 class CommentsCubit extends Cubit<CommentsState> {
   CommentsCubit({
     required this.postId,
@@ -15,16 +14,23 @@ class CommentsCubit extends Cubit<CommentsState> {
     required AddComment addComment,
     required DeleteComment deleteComment,
     int initialCount = 0,
+    this.currentUserId,
+    this.currentUserName,
   })  : _getComments = getComments,
         _addComment = addComment,
         _deleteComment = deleteComment,
         super(CommentsState(commentsCount: initialCount));
 
   final int postId;
+
+  /// Used to fill in the author of a comment you just added
+
+  final int? currentUserId;
+  final String? currentUserName;
+
   final GetComments _getComments;
   final AddComment _addComment;
   final DeleteComment _deleteComment;
-
   /// First page. Also used by the Retry button.
   Future<void> load() async {
     emit(state.copyWith(status: CommentsStatus.loading));
@@ -103,12 +109,22 @@ class CommentsCubit extends Cubit<CommentsState> {
         return false;
       },
       (comment) {
-        // New comment goes on top ("Most Recent"). If your API returns the
-        // oldest first, change this to `[...state.comments, comment]`.
+        // The POST response has no author, so use the logged-in user.
+        final mine = Comment(
+          id: comment.id,
+          body: comment.body,
+          authorId: comment.authorId ?? currentUserId,
+          authorName: comment.authorName.isEmpty
+              ? (currentUserName ?? '')
+              : comment.authorName,
+          createdAt: comment.createdAt,
+        );
+        // New comment goes on top. If the API returns the oldest first,
+        // change this to `[...state.comments, mine]`.
         emit(
           state.copyWith(
             isSubmitting: false,
-            comments: [comment, ...state.comments],
+            comments: [mine, ...state.comments],
             commentsCount: state.commentsCount + 1,
           ),
         );
@@ -144,6 +160,7 @@ class CommentsCubit extends Cubit<CommentsState> {
       ),
     );
   }
+  
   /// Guests get a friendly message instead of the raw "Unauthenticated".
   String _msg(Failure failure) =>
       failure is AuthFailure ? 'Sign in to comment.' : failure.message;
