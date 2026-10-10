@@ -82,10 +82,12 @@ class HomePage extends StatelessWidget {
           ),
 },
       ),
-      bottomNavigationBar: BottomNavBar(
-        currentTab: NavTab.home,
-        onTabSelected: onNavTabSelected ?? (_) {},
-      ),
+      bottomNavigationBar: onNavTabSelected == null
+          ? null
+          : BottomNavBar(
+              currentTab: NavTab.home,
+              onTabSelected: onNavTabSelected!,
+            ),
     );
   }
 }

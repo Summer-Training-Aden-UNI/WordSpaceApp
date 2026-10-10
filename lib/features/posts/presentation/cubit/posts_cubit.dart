@@ -121,7 +121,16 @@ class PostsCubit extends Cubit<PostsState> {
 
   /// Called when the detail page returns an updated post.
   void syncPost(Post post) => _replace(post);
-
+  
+  /// Keeps a post's comment count in step with the comments screen
+  /// (no API call).
+  void setCommentCount(int postId, int count) {
+    final s = state;
+    if (s is! PostsLoaded) return;
+    final post = s.posts.where((p) => p.id == postId).firstOrNull;
+    if (post == null || post.commentCount == count) return;
+    _replace(post.copyWith(commentCount: count));
+  } 
   // ---------------------------------------------------------------------------
   // Helpers
   // ---------------------------------------------------------------------------

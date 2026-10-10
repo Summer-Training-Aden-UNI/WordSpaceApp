@@ -1,10 +1,13 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../../../../core/error/failures.dart';
 import '../../../../core/widgets/widgets.dart';
 import '../../../../injection_container.dart';
 import '../../../follow/domain/usecases/follow_user.dart';
 import '../../../follow/domain/usecases/unfollow_user.dart';
+import '../../../auth/presentation/cubit/auth_cubit.dart';
+
 
 /// Follow / Following pill for a post author. Keeps its own state and calls
 /// the follow use cases directly. Not optimistic: shows a spinner while the
@@ -65,6 +68,13 @@ class _AuthorFollowButtonState extends State<AuthorFollowButton> {
 
   @override
   Widget build(BuildContext context) {
+    // You cannot follow yourself (the API answers 422), so hide the button
+    // on your own posts. watch() = it updates if you log in or out.
+    final auth = context.watch<AuthCubit>().state;
+    if (auth is AuthAuthenticated && auth.user.id == widget.authorId) {
+      return const SizedBox.shrink();
+    }
+
     return FollowButton(
       isFollowing: _following,
       isLoading: _loading,

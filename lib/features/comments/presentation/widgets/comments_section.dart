@@ -19,12 +19,14 @@ class CommentsSection extends StatelessWidget {
     this.currentUserId,
     this.currentUserName,
     this.initialCount = 0,
+    this.onCountChanged,
   });
 
   final int postId;
   final int? currentUserId;
-    final String? currentUserName;
+  final String? currentUserName;
   final int initialCount;
+  final void Function(int count)? onCountChanged;
 
   @override
   Widget build(BuildContext context) {
@@ -33,6 +35,7 @@ class CommentsSection extends StatelessWidget {
       create: (_) => CommentsCubit(
         postId: postId,
         initialCount: initialCount,
+        onCountChanged: onCountChanged,
         currentUserId: currentUserId,
         currentUserName: currentUserName,
         getComments: sl(),

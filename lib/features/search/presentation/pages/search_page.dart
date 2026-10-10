@@ -144,10 +144,12 @@ class _SearchView extends StatelessWidget {
           ),
         ],
       ),
-      bottomNavigationBar: BottomNavBar(
-        currentTab: NavTab.search,
-        onTabSelected: onNavTabSelected ?? (_) {},
-      ),
+       bottomNavigationBar: onNavTabSelected == null
+          ? null
+          : BottomNavBar(
+              currentTab: NavTab.search,
+              onTabSelected: onNavTabSelected!,
+            ),
     );
   }
 }
@@ -158,18 +160,28 @@ class _Hint extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return const Column(
-      children: [
-        Expanded(
-          child: EmptyState(
-            title: 'Search WordSpace',
-            message: 'Find posts and people. Type at least 2 characters.',
-            icon: Icons.search,
+    // Scrolls when the keyboard leaves too little room, so nothing overflows.
+    // With enough room it looks the same as before.
+    return const CustomScrollView(
+      keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
+      slivers: [
+        SliverFillRemaining(
+          hasScrollBody: false,
+          child: Column(
+            children: [
+              Expanded(
+                child: EmptyState(
+                  title: 'Search WordSpace',
+                  message: 'Find posts and people. Type at least 2 characters.',
+                  icon: Icons.search,
+                ),
+              ),
+              Padding(
+                padding: EdgeInsets.fromLTRB(16, 0, 16, 16),
+                child: SearchTipCard(),
+              ),
+            ],
           ),
-        ),
-        Padding(
-          padding: EdgeInsets.fromLTRB(16, 0, 16, 16),
-          child: SearchTipCard(),
         ),
       ],
     );
