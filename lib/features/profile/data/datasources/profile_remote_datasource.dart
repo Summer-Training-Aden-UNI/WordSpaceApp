@@ -27,7 +27,7 @@ class ProfileRemoteDataSourceImpl implements ProfileRemoteDataSource {
     return ProfileModel.fromJson(res.data as Map<String, dynamic>);
   }
 
-  @override
+ @override
   Future<ProfileModel> updateProfile({
     required String name,
     String? username,
@@ -35,10 +35,9 @@ class ProfileRemoteDataSourceImpl implements ProfileRemoteDataSource {
     String? avatarPath,
     bool removeAvatar = false,
   }) async {
-    // The API takes multipart/form-data sent with POST and _method=PUT
-    // (PHP does not read form-data on a real PUT).
+    // The route only accepts POST (a spoofed _method=PUT gets a 405),
+    // sent as multipart/form-data so the avatar file can be attached.
     final fields = <String, dynamic>{
-      '_method': 'PUT',
       'name': name,
       'username': ?username,
       'bio': ?bio,

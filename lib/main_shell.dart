@@ -165,8 +165,18 @@ class _ShellViewState extends State<_ShellView> {
                     : ProfilePage(
                         showBack: false,
                         onEditTap: () => openEditProfile(context),
-                        onPostTap: (post) => openPostDetails(context, post),
-                        onCommentTap: (post) => openPostDetails(context, post),
+                        onPostTap: (post) => openPostDetails(
+                          context,
+                          post,
+                          onChanged: () =>
+                              context.read<ProfileCubit>().load(silent: true),
+                        ),
+                        onCommentTap: (post) => openPostDetails(
+                          context,
+                          post,
+                          onChanged: () =>
+                              context.read<ProfileCubit>().load(silent: true),
+                        ),
                       ))
                 : const SizedBox.shrink(),
           ],

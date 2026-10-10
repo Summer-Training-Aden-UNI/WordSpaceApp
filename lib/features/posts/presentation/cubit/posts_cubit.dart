@@ -122,6 +122,15 @@ class PostsCubit extends Cubit<PostsState> {
   /// Called when the detail page returns an updated post.
   void syncPost(Post post) => _replace(post);
 
+  /// Removes a deleted post from the feed (no API call).
+  void removePost(int postId) => _updateLoaded(
+        (s) => s.copyWith(
+          posts: [
+            for (final p in s.posts)
+              if (p.id != postId) p,
+          ],
+        ),
+      );
   /// Keeps a post's comment count in step with the comments screen
   /// (no API call).
   void setCommentCount(int postId, int count) {

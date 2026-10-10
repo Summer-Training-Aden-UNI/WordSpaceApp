@@ -1,6 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
+import 'core/theme/app_colors.dart';
+import 'core/widgets/widgets.dart';
+import 'features/posts/presentation/cubit/edit_post_cubit.dart';
+import 'features/posts/presentation/pages/edit_post_page.dart';
+import 'features/posts/domain/usecases/delete_post.dart';
 import 'features/auth/presentation/cubit/auth_cubit.dart';
 import 'features/comments/presentation/widgets/comments_section.dart';
 import 'features/follow/presentation/follow_store.dart';
@@ -13,9 +18,14 @@ import 'features/profile/presentation/pages/guest_profile_page.dart';
 import 'features/profile/presentation/pages/profile_page.dart';
 import 'injection_container.dart' as di;
 
-/// The ONLY place that opens Post Details. [context] must be under the
-/// PostsCubit provider (use homeContext from main.dart).
-Future<void> openPostDetails(BuildContext context, Post post) {
+// The ONLY place that opens Post Details. [context] must be under the
+/// PostsCubit provider. [onChanged] runs after the post is deleted, so the
+/// caller can refresh its own list.
+Future<void> openPostDetails(
+  BuildContext context,
+  Post post, {
+  VoidCallback? onChanged,
+}) {
   final postsCubit = context.read<PostsCubit>();
   final auth = context.read<AuthCubit>().state;
   final user = auth is AuthAuthenticated ? auth.user : null;
@@ -29,6 +39,12 @@ Future<void> openPostDetails(BuildContext context, Post post) {
           post: post,
           userName: user?.name,
           userImageUrl: user?.avatarUrl,
+          currentUserId: user?.id,
+          onAuthorTap: () => openProfile(context, post.author.id),
+          onEditTap: (current) =>
+              _editPost(context, current, postsCubit, onChanged: onChanged),
+          onDeleteTap: () =>
+              _deletePost(context, post, postsCubit, onChanged: onChanged),
           commentsContent: CommentsSection(
             postId: post.id,
             currentUserId: user?.id,
@@ -41,6 +57,85 @@ Future<void> openPostDetails(BuildContext context, Post post) {
       ),
     ),
   );
+}
+/// Confirm -> delete -> remove from the feed -> close Post Details.
+Future<void> _deletePost(
+  BuildContext context,
+  Post post,
+  PostsCubit postsCubit, {
+  VoidCallback? onChanged,
+}) async {
+  final confirmed = await showDialog<bool>(
+    context: context,
+    builder: (ctx) => AlertDialog(
+      title: const Text('Delete this post?'),
+      content: const Text('This cannot be undone.'),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.pop(ctx, false),
+          child: const Text('Cancel'),
+        ),
+        TextButton(
+          onPressed: () => Navigator.pop(ctx, true),
+          child: const Text(
+            'Delete',
+            style: TextStyle(color: AppColors.error),
+          ),
+        ),
+      ],
+    ),
+  );
+  if (confirmed != true || !context.mounted) return;
+
+  // Blocks the screen while the request runs (no accidental second tap).
+  showDialog<void>(
+    context: context,
+    barrierDismissible: false,
+    builder: (_) => const Center(child: CircularProgressIndicator()),
+  );
+  final result = await di.sl<DeletePost>()(DeletePostParams(id: post.id));
+  if (!context.mounted) return;
+  Navigator.pop(context); // closes the spinner
+
+  result.fold(
+    (failure) => AppSnackBar.error(context, failure.message),
+    (_) {
+      postsCubit.removePost(post.id);
+      onChanged?.call();
+      Navigator.pop(context); // closes Post Details
+      AppSnackBar.show(context, 'Post deleted');
+    },
+  );
+}
+/// Opens the editor, then updates the feed (or removes the post if it was
+/// switched to Draft). Returns the result so Post Details can refresh itself.
+Future<EditPostResult?> _editPost(
+  BuildContext context,
+  Post current,
+  PostsCubit postsCubit, {
+  VoidCallback? onChanged,
+}) async {
+  final result = await Navigator.push<EditPostResult>(
+    context,
+    MaterialPageRoute(builder: (_) => EditPostPage(post: current)),
+  );
+  if (result == null) return null;
+
+  onChanged?.call();
+
+  if (result.isDraft) {
+    // A draft is not public: it leaves the feed and Post Details closes.
+    postsCubit.removePost(current.id);
+    if (context.mounted) {
+      Navigator.pop(context);
+      AppSnackBar.show(context, 'Saved as a draft. It is no longer public.');
+    }
+    return null;
+  }
+
+  postsCubit.syncPost(result.post);
+  if (context.mounted) AppSnackBar.show(context, 'Post updated');
+  return result;
 }
 
 /// Builds the cubit behind a profile page (mine or someone else's).
@@ -91,8 +186,18 @@ Future<void> openProfile(BuildContext context, int userId) {
             currentUserName: isMe ? null : me?.name,
             onAvatarTap: () => openMyProfile(profileContext),
             onEditTap: () => openEditProfile(profileContext),
-            onPostTap: (post) => openPostDetails(profileContext, post),
-            onCommentTap: (post) => openPostDetails(profileContext, post),
+            onPostTap: (post) => openPostDetails(
+              profileContext,
+              post,
+              onChanged: () =>
+                  profileContext.read<ProfileCubit>().load(silent: true),
+            ),
+            onCommentTap: (post) => openPostDetails(
+              profileContext,
+              post,
+              onChanged: () =>
+                  profileContext.read<ProfileCubit>().load(silent: true),
+            ),
           ),
         ),
       ),
