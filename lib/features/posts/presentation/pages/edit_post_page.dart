@@ -1,5 +1,4 @@
-import 'dart:typed_data';
-
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:image_picker/image_picker.dart';
@@ -12,8 +11,10 @@ import '../../../../injection_container.dart';
 import '../../domain/entities/post.dart';
 import '../cubit/create_post_cubit.dart' show PublishStatus;
 import '../cubit/edit_post_cubit.dart';
+import '../widgets/post_form_widgets.dart';
 
-/// Edit my post: title, content, cover and visibility.
+/// Edit my post. Looks exactly like the Create Post page (same fields, cover
+/// picker and publishing options), filled with the post's current values.
 /// Pops with an [EditPostResult] when it was saved.
 class EditPostPage extends StatelessWidget {
   const EditPostPage({super.key, required this.post});
@@ -48,7 +49,8 @@ class _EditPostViewState extends State<_EditPostView> {
   late final TextEditingController _title;
   late final TextEditingController _body;
 
-  Uint8List? _coverPreview;
+  /// Preview of a newly picked cover (web needs the bytes).
+  Uint8List? _newCoverBytes;
 
   @override
   void initState() {
@@ -68,11 +70,15 @@ class _EditPostViewState extends State<_EditPostView> {
     super.dispose();
   }
 
-  bool get _hasCover =>
-      _coverPreview != null ||
-      (widget.post.coverImageUrl?.trim().isNotEmpty ?? false);
+  /// The cover the post has now (null when it has none).
+  String? get _existingCoverUrl {
+    final url = widget.post.coverImageUrl?.trim();
+    return (url == null || url.isEmpty) ? null : url;
+  }
 
   Future<void> _pickCover() async {
+    final cubit = context.read<EditPostCubit>();
+
     try {
       final file = await _picker.pickImage(
         source: ImageSource.gallery,
@@ -91,39 +97,28 @@ class _EditPostViewState extends State<_EditPostView> {
       if (!mounted) return;
 
       if (bytes.length > _maxImageBytes) {
-        AppSnackBar.error(context, 'The cover image must be under 2 MB.');
+        AppSnackBar.error(context, 'The image must be under 2MB.');
         return;
       }
 
-      setState(() => _coverPreview = bytes);
-      context.read<EditPostCubit>().setImage(file.path);
+      setState(() => _newCoverBytes = bytes);
+      cubit.setImage(file.path);
     } catch (e) {
       debugPrint('Cover picker error: $e');
       if (mounted) AppSnackBar.error(context, "Couldn't open your gallery.");
     }
   }
 
+  /// The X on a newly picked cover: back to the one the post already has.
+  void _discardNewCover() {
+    setState(() => _newCoverBytes = null);
+    context.read<EditPostCubit>().discardNewImage();
+  }
+
   void _submit() {
     FocusScope.of(context).unfocus();
     if (!_formKey.currentState!.validate()) return;
     context.read<EditPostCubit>().submit(title: _title.text, body: _body.text);
-  }
-
-  Widget _cover() {
-    final placeholder = Container(
-      color: AppColors.sageTint,
-      alignment: Alignment.center,
-      child: const Icon(Icons.image_outlined, color: AppColors.slateMuted),
-    );
-
-    if (_coverPreview != null) {
-      return Image.memory(_coverPreview!, fit: BoxFit.cover);
-    }
-    return Image.network(
-      widget.post.coverImageUrl!,
-      fit: BoxFit.cover,
-      errorBuilder: (_, _, _) => placeholder,
-    );
   }
 
   @override
@@ -141,9 +136,10 @@ class _EditPostViewState extends State<_EditPostView> {
       },
       builder: (context, state) {
         final cubit = context.read<EditPostCubit>();
+        final isPublish = state.status == PublishStatus.published;
+        final hasCover = state.imagePath != null || _existingCoverUrl != null;
 
         return Scaffold(
-          backgroundColor: AppColors.surface,
           appBar: const AppTopBar(title: 'Edit post', showBack: true),
           body: GestureDetector(
             onTap: () => FocusScope.of(context).unfocus(),
@@ -152,90 +148,82 @@ class _EditPostViewState extends State<_EditPostView> {
               child: ListView(
                 keyboardDismissBehavior:
                     ScrollViewKeyboardDismissBehavior.onDrag,
-                padding: const EdgeInsets.fromLTRB(16, 16, 16, 32),
+                padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),
                 children: [
-                  if (_hasCover)
-                    ClipRRect(
-                      borderRadius: BorderRadius.circular(16),
-                      child: AspectRatio(
-                        aspectRatio: 16 / 9,
-                        child: _cover(),
-                      ),
-                    ),
-                  Align(
-                    alignment: Alignment.centerLeft,
-                    child: TextButton.icon(
-                      onPressed: _pickCover,
-                      icon: const Icon(Icons.image_outlined, size: 18),
-                      label: Text(
-                        _hasCover ? 'Change cover image' : 'Add a cover image',
-                      ),
-                    ),
-                  ),
-                  const SizedBox(height: 8),
-                  AppTextField(
-                    label: 'Title',
+                  PostFormTextField(
+                    label: 'Post Title',
+                    isRequired: true,
                     controller: _title,
-                    prefixIcon: Icons.title,
+                    hint: 'Enter your post title...',
+                    maxLength: 100,
                     textInputAction: TextInputAction.next,
-                    validator: (v) => (v == null || v.trim().isEmpty)
+                    errorText: state.fieldError('title'),
+                    validator: (value) => value == null || value.trim().isEmpty
                         ? 'Please enter a title'
                         : null,
                   ),
-                  const SizedBox(height: 16),
-                  AppTextField(
+                  const SizedBox(height: 20),
+                  PostCoverPicker(
+                    label:
+                        hasCover ? 'Cover Image' : 'Add Cover Image (Optional)',
+                    imagePath: state.imagePath,
+                    imageBytes: _newCoverBytes,
+                    existingImageUrl: _existingCoverUrl,
+                    errorText: state.fieldError('image'),
+                    onPick: _pickCover,
+                    onRemove: _discardNewCover,
+                  ),
+                  const SizedBox(height: 20),
+                  PostFormTextField(
                     label: 'Content',
+                    isRequired: true,
                     controller: _body,
-                    maxLines: 10,
-                    keyboardType: TextInputType.multiline,
-                    validator: (v) => (v == null || v.trim().isEmpty)
+                    hint:
+                        'Share your thoughts, tutorials, or insights with '
+                        'the community...',
+                    maxLength: 1000,
+                    minLines: 6,
+                    maxLines: 12,
+                    errorText:
+                        state.fieldError('content') ??
+                        state.fieldError('body'),
+                    validator: (value) => value == null || value.trim().isEmpty
                         ? 'Please write something'
                         : null,
                   ),
-                  const SizedBox(height: 20),
-                  Text(
-                    'Visibility',
-                    style: AppFonts.labelLg(color: AppColors.onSurface),
+                  const SizedBox(height: 24),
+                  const SectionHeader(title: 'Publishing Options'),
+                  const SizedBox(height: 12),
+                  PostPublishOptionTile(
+                    icon: Icons.public,
+                    title: 'Publish',
+                    subtitle: 'Make your post visible to everyone',
+                    selected: isPublish,
+                    onTap: () => cubit.setStatus(PublishStatus.published),
                   ),
-                  const SizedBox(height: 8),
-                  SegmentedButton<PublishStatus>(
-                    segments: const [
-                      ButtonSegment(
-                        value: PublishStatus.published,
-                        label: Text('Published'),
-                        icon: Icon(Icons.public),
-                      ),
-                      ButtonSegment(
-                        value: PublishStatus.draft,
-                        label: Text('Draft'),
-                        icon: Icon(Icons.edit_note),
-                      ),
-                    ],
-                    selected: {state.status},
-                    onSelectionChanged: (s) => cubit.setStatus(s.first),
+                  const SizedBox(height: 12),
+                  PostPublishOptionTile(
+                    icon: Icons.description_outlined,
+                    title: 'Save as Draft',
+                    subtitle: 'Hide it from everyone until you publish again',
+                    selected: !isPublish,
+                    onTap: () => cubit.setStatus(PublishStatus.draft),
                   ),
-                  if (state.status == PublishStatus.draft)
+                  if (!isPublish)
                     Padding(
                       padding: const EdgeInsets.only(top: 8),
                       child: Text(
-                        'A draft is hidden from everyone, including the feed.',
+                        'A draft is removed from the feed and your profile.',
                         style: AppFonts.bodySm(color: AppColors.slateMuted),
                       ),
                     ),
                   const SizedBox(height: 24),
-                  FilledButton.icon(
-                    onPressed: state.isSubmitting ? null : _submit,
-                    icon: state.isSubmitting
-                        ? const SizedBox(
-                            width: 18,
-                            height: 18,
-                            child: CircularProgressIndicator(
-                              strokeWidth: 2,
-                              color: AppColors.onPrimary,
-                            ),
-                          )
-                        : const Icon(Icons.check),
-                    label: const Text('Save changes'),
+                  AppButton(
+                    label: isPublish ? 'Save Changes' : 'Save as Draft',
+                    icon: Icons.save_outlined,
+                    trailingIcon: Icons.save_outlined,
+                    isLoading: state.isSubmitting,
+                    onPressed: _submit,
                   ),
                 ],
               ),

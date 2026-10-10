@@ -1,16 +1,13 @@
-import 'dart:io';
-
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:image_picker/image_picker.dart';
 
-import '../../../../core/theme/app_colors.dart';
-import '../../../../core/theme/app_fonts.dart';
 import '../../../../core/widgets/navigation/app_top_bar.dart';
 import '../../../../core/widgets/widgets.dart';
 import '../../../../injection_container.dart';
 import '../cubit/create_post_cubit.dart';
+import '../widgets/post_form_widgets.dart';
 
 /// Create Post screen. Pops with the created Post on success.
 class CreatePostPage extends StatelessWidget {
@@ -39,8 +36,8 @@ class _CreatePostView extends StatefulWidget {
 }
 
 class _CreatePostViewState extends State<_CreatePostView> {
-  static const _maxImageBytes = 5 * 1024 * 1024;
-  static const _allowedExtensions = ['.jpg', '.jpeg', '.png'];
+  static const _maxImageBytes = 2 * 1024 * 1024; // the API's limit
+  static const _allowedExtensions = ['.jpg', '.jpeg', '.png', '.webp'];
 
   final _formKey = GlobalKey<FormState>();
   final _titleController = TextEditingController();
@@ -71,7 +68,7 @@ class _CreatePostViewState extends State<_CreatePostView> {
       final name = file.name.toLowerCase();
 
       if (!_allowedExtensions.any(name.endsWith)) {
-        AppSnackBar.error(context, 'Please choose a JPG or PNG image.');
+        AppSnackBar.error(context, 'Please choose a JPG, PNG or WebP image.');
         return;
       }
 
@@ -79,7 +76,7 @@ class _CreatePostViewState extends State<_CreatePostView> {
 
       if (bytes.length > _maxImageBytes) {
         if (mounted) {
-          AppSnackBar.error(context, 'The image must be under 5MB.');
+          AppSnackBar.error(context, 'The image must be under 2MB.');
         }
         return;
       }
@@ -159,7 +156,7 @@ class _CreatePostViewState extends State<_CreatePostView> {
                     ScrollViewKeyboardDismissBehavior.onDrag,
                 padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),
                 children: [
-                  _CounterTextField(
+                  PostFormTextField(
                     label: 'Post Title',
                     isRequired: true,
                     controller: _titleController,
@@ -172,7 +169,7 @@ class _CreatePostViewState extends State<_CreatePostView> {
                         : null,
                   ),
                   const SizedBox(height: 20),
-                  _CoverImagePicker(
+                  PostCoverPicker(
                     imagePath: state.imagePath,
                     imageBytes: _selectedImageBytes,
                     errorText: state.fieldError('image'),
@@ -180,7 +177,7 @@ class _CreatePostViewState extends State<_CreatePostView> {
                     onRemove: _removeImage,
                   ),
                   const SizedBox(height: 20),
-                  _CounterTextField(
+                  PostFormTextField(
                     label: 'Content',
                     isRequired: true,
                     controller: _bodyController,
@@ -190,7 +187,9 @@ class _CreatePostViewState extends State<_CreatePostView> {
                     maxLength: 1000,
                     minLines: 6,
                     maxLines: 12,
-                    errorText: state.fieldError('body'),
+                    errorText:
+                        state.fieldError('content') ??
+                        state.fieldError('body'),
                     validator: (value) => value == null || value.trim().isEmpty
                         ? 'Please write something'
                         : null,
@@ -198,7 +197,7 @@ class _CreatePostViewState extends State<_CreatePostView> {
                   const SizedBox(height: 24),
                   const SectionHeader(title: 'Publishing Options'),
                   const SizedBox(height: 12),
-                  _PublishOptionTile(
+                  PostPublishOptionTile(
                     icon: Icons.public,
                     title: 'Publish',
                     subtitle: 'Make your post visible to everyone',
@@ -206,7 +205,7 @@ class _CreatePostViewState extends State<_CreatePostView> {
                     onTap: () => cubit.setStatus(PublishStatus.published),
                   ),
                   const SizedBox(height: 12),
-                  _PublishOptionTile(
+                  PostPublishOptionTile(
                     icon: Icons.description_outlined,
                     title: 'Save as Draft',
                     subtitle: 'Keep it private and finish editing later',
@@ -239,427 +238,6 @@ class _CreatePostViewState extends State<_CreatePostView> {
                 ),
         );
       },
-    );
-  }
-}
-
-// =============================================================================
-// Private widgets
-// =============================================================================
-
-class _FieldLabel extends StatelessWidget {
-  const _FieldLabel({
-    required this.label,
-    this.isRequired = false,
-    this.trailing,
-  });
-
-  final String label;
-  final bool isRequired;
-  final Widget? trailing;
-
-  @override
-  Widget build(BuildContext context) {
-    return Row(
-      children: [
-        Expanded(
-          child: Text.rich(
-            TextSpan(
-              text: label,
-              style: AppFonts.labelLg(color: AppColors.onSurface),
-              children: [
-                if (isRequired)
-                  TextSpan(
-                    text: ' *',
-                    style: AppFonts.labelLg(color: AppColors.error),
-                  ),
-              ],
-            ),
-          ),
-        ),
-        if (trailing != null) trailing!,
-      ],
-    );
-  }
-}
-
-class _CounterTextField extends StatefulWidget {
-  const _CounterTextField({
-    required this.label,
-    required this.controller,
-    required this.maxLength,
-    this.hint,
-    this.isRequired = false,
-    this.minLines = 1,
-    this.maxLines = 1,
-    this.textInputAction,
-    this.validator,
-    this.errorText,
-  });
-
-  final String label;
-  final TextEditingController controller;
-  final int maxLength;
-  final String? hint;
-  final bool isRequired;
-  final int minLines;
-  final int maxLines;
-  final TextInputAction? textInputAction;
-  final String? Function(String?)? validator;
-  final String? errorText;
-
-  @override
-  State<_CounterTextField> createState() => _CounterTextFieldState();
-}
-
-class _CounterTextFieldState extends State<_CounterTextField> {
-  bool _focused = false;
-
-  @override
-  Widget build(BuildContext context) {
-    final multiline = widget.maxLines > 1;
-
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        _FieldLabel(
-          label: widget.label,
-          isRequired: widget.isRequired,
-          trailing: ValueListenableBuilder<TextEditingValue>(
-            valueListenable: widget.controller,
-            builder: (context, value, _) => Text(
-              '${value.text.characters.length}/${widget.maxLength}',
-              style: AppFonts.labelMd(color: AppColors.slateMuted),
-            ),
-          ),
-        ),
-        const SizedBox(height: 8),
-        Focus(
-          onFocusChange: (value) {
-            setState(() => _focused = value);
-          },
-          child: AnimatedContainer(
-            duration: const Duration(milliseconds: 150),
-            decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(12),
-              boxShadow: _focused
-                  ? const [
-                      BoxShadow(color: AppColors.focusGlow, spreadRadius: 4),
-                    ]
-                  : const [],
-            ),
-            child: TextFormField(
-              controller: widget.controller,
-              minLines: widget.minLines,
-              maxLines: widget.maxLines,
-              maxLength: widget.maxLength,
-              keyboardType: multiline
-                  ? TextInputType.multiline
-                  : TextInputType.text,
-              textInputAction: widget.textInputAction,
-              textCapitalization: TextCapitalization.sentences,
-              validator: widget.validator,
-              style: AppFonts.bodyMd(color: AppColors.onSurface),
-              decoration: InputDecoration(
-                hintText: widget.hint,
-                errorText: widget.errorText,
-                counterText: '',
-                alignLabelWithHint: true,
-              ),
-            ),
-          ),
-        ),
-      ],
-    );
-  }
-}
-
-class _CoverImagePicker extends StatelessWidget {
-  const _CoverImagePicker({
-    required this.imagePath,
-    required this.imageBytes,
-    required this.onPick,
-    required this.onRemove,
-    this.errorText,
-  });
-
-  final String? imagePath;
-  final Uint8List? imageBytes;
-  final VoidCallback onPick;
-  final VoidCallback onRemove;
-  final String? errorText;
-
-  @override
-  Widget build(BuildContext context) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        _FieldLabel(
-          label: 'Add Cover Image (Optional)',
-          trailing: Text.rich(
-            TextSpan(
-              text: 'JPG, PNG · ',
-              style: AppFonts.bodySm(color: AppColors.slateMuted),
-              children: [
-                TextSpan(
-                  text: 'max 5MB',
-                  style: AppFonts.labelMd(color: AppColors.primary),
-                ),
-              ],
-            ),
-          ),
-        ),
-        const SizedBox(height: 8),
-        imagePath == null ? _buildEmpty() : _buildPreview(),
-        if (errorText != null) ...[
-          const SizedBox(height: 6),
-          Text(errorText!, style: AppFonts.bodySm(color: AppColors.error)),
-        ],
-      ],
-    );
-  }
-
-  Widget _buildEmpty() {
-    return CustomPaint(
-      foregroundPainter: _DashedBorderPainter(color: AppColors.outlineVariant),
-      child: Material(
-        color: AppColors.surfaceContainerLow,
-        borderRadius: BorderRadius.circular(16),
-        clipBehavior: Clip.antiAlias,
-        child: InkWell(
-          onTap: onPick,
-          child: Padding(
-            padding: const EdgeInsets.symmetric(vertical: 24, horizontal: 16),
-            child: Column(
-              children: [
-                Container(
-                  width: 48,
-                  height: 48,
-                  decoration: const BoxDecoration(
-                    color: AppColors.surfaceContainerLowest,
-                    shape: BoxShape.circle,
-                  ),
-                  child: const Icon(
-                    Icons.add_photo_alternate_outlined,
-                    color: AppColors.primary,
-                  ),
-                ),
-                const SizedBox(height: 12),
-                Text(
-                  'Add Cover Image (Optional)',
-                  textAlign: TextAlign.center,
-                  style: AppFonts.headlineSm(color: AppColors.onSurface),
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  'Tap to upload or drag & drop JPG,\nPNG up to 5MB',
-                  textAlign: TextAlign.center,
-                  style: AppFonts.bodySm(color: AppColors.slateMuted),
-                ),
-                const SizedBox(height: 16),
-                ElevatedButton.icon(
-                  onPressed: onPick,
-                  icon: const Icon(Icons.cloud_upload_outlined, size: 18),
-                  label: const Text('Choose File'),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: AppColors.primary,
-                    minimumSize: const Size(0, 40),
-                    padding: const EdgeInsets.symmetric(horizontal: 16),
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildPreview() {
-    return ClipRRect(
-      borderRadius: BorderRadius.circular(16),
-      child: AspectRatio(
-        aspectRatio: 2,
-        child: Stack(
-          fit: StackFit.expand,
-          children: [
-            GestureDetector(
-              onTap: onPick,
-              child: kIsWeb
-                  ? (imageBytes != null
-                        ? Image.memory(imageBytes!, fit: BoxFit.cover)
-                        : const Center(
-                            child: Text('Image preview unavailable'),
-                          ))
-                  : Image.file(File(imagePath!), fit: BoxFit.cover),
-            ),
-            Positioned(
-              top: 8,
-              right: 8,
-              child: Material(
-                color: AppColors.slate.withValues(alpha: 0.65),
-                shape: const CircleBorder(),
-                child: InkWell(
-                  customBorder: const CircleBorder(),
-                  onTap: onRemove,
-                  child: const Padding(
-                    padding: EdgeInsets.all(6),
-                    child: Icon(Icons.close, size: 18, color: Colors.white),
-                  ),
-                ),
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-class _DashedBorderPainter extends CustomPainter {
-  _DashedBorderPainter({required this.color});
-
-  final Color color;
-
-  static const _radius = 16.0;
-  static const _dash = 6.0;
-  static const _gap = 4.0;
-
-  @override
-  void paint(Canvas canvas, Size size) {
-    final paint = Paint()
-      ..color = color
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = 1.5;
-
-    final path = Path()
-      ..addRRect(
-        RRect.fromRectAndRadius(
-          Offset.zero & size,
-          const Radius.circular(_radius),
-        ),
-      );
-
-    for (final metric in path.computeMetrics()) {
-      var distance = 0.0;
-
-      while (distance < metric.length) {
-        canvas.drawPath(metric.extractPath(distance, distance + _dash), paint);
-        distance += _dash + _gap;
-      }
-    }
-  }
-
-  @override
-  bool shouldRepaint(_DashedBorderPainter old) => old.color != color;
-}
-
-class _PublishOptionTile extends StatelessWidget {
-  const _PublishOptionTile({
-    required this.icon,
-    required this.title,
-    required this.subtitle,
-    required this.selected,
-    required this.onTap,
-  });
-
-  final IconData icon;
-  final String title;
-  final String subtitle;
-  final bool selected;
-  final VoidCallback onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    return Material(
-      color: selected ? AppColors.sageTint : AppColors.surfaceContainerLowest,
-      clipBehavior: Clip.antiAlias,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(16),
-        side: BorderSide(
-          color: selected ? AppColors.primaryFixedDim : AppColors.borderLight,
-          width: selected ? 1.5 : 1,
-        ),
-      ),
-      child: InkWell(
-        onTap: onTap,
-        child: Padding(
-          padding: const EdgeInsets.all(12),
-          child: Row(
-            children: [
-              Container(
-                width: 40,
-                height: 40,
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  color: selected
-                      ? AppColors.primaryFixed
-                      : AppColors.surfaceContainer,
-                ),
-                child: Icon(
-                  icon,
-                  size: 20,
-                  color: selected
-                      ? AppColors.onPrimaryFixedVariant
-                      : AppColors.onSurfaceVariant,
-                ),
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      title,
-                      style: AppFonts.headlineSm(color: AppColors.onSurface),
-                    ),
-                    Text(
-                      subtitle,
-                      style: AppFonts.bodySm(color: AppColors.slateMuted),
-                    ),
-                  ],
-                ),
-              ),
-              const SizedBox(width: 12),
-              _RadioDot(selected: selected),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-class _RadioDot extends StatelessWidget {
-  const _RadioDot({required this.selected});
-
-  final bool selected;
-
-  @override
-  Widget build(BuildContext context) {
-    return AnimatedContainer(
-      duration: const Duration(milliseconds: 150),
-      width: 24,
-      height: 24,
-      decoration: BoxDecoration(
-        shape: BoxShape.circle,
-        color: selected ? Colors.white : AppColors.surfaceContainerHigh,
-        border: selected
-            ? Border.all(color: AppColors.primary, width: 2)
-            : null,
-      ),
-      child: selected
-          ? Center(
-              child: Container(
-                width: 10,
-                height: 10,
-                decoration: const BoxDecoration(
-                  color: AppColors.primary,
-                  shape: BoxShape.circle,
-                ),
-              ),
-            )
-          : null,
     );
   }
 }

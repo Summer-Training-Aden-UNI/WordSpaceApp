@@ -25,6 +25,7 @@ class EditPostState extends Equatable {
     this.status = PublishStatus.published,
     this.isSubmitting = false,
     this.errorMessage,
+    this.fieldErrors = const {},
     this.result,
   });
 
@@ -35,26 +36,34 @@ class EditPostState extends Equatable {
 
   /// One-shot message for a snackbar. Not carried over by [copyWith].
   final String? errorMessage;
+
+  /// Validation errors returned by Laravel, keyed by field name.
+  final Map<String, List<String>> fieldErrors;
   final EditPostResult? result;
 
   EditPostState copyWith({
     String? imagePath,
+    bool clearImage = false,
     PublishStatus? status,
     bool? isSubmitting,
     String? errorMessage,
+    Map<String, List<String>>? fieldErrors,
     EditPostResult? result,
   }) =>
       EditPostState(
-        imagePath: imagePath ?? this.imagePath,
+        imagePath: clearImage ? null : (imagePath ?? this.imagePath),
         status: status ?? this.status,
         isSubmitting: isSubmitting ?? this.isSubmitting,
         errorMessage: errorMessage,
+        fieldErrors: fieldErrors ?? this.fieldErrors,
         result: result ?? this.result,
       );
 
+  String? fieldError(String key) => fieldErrors[key]?.firstOrNull;
+
   @override
   List<Object?> get props =>
-      [imagePath, status, isSubmitting, errorMessage, result];
+      [imagePath, status, isSubmitting, errorMessage, fieldErrors, result];
 }
 
 /// Drives the Edit Post form. The text fields live in the page controllers.
@@ -69,12 +78,15 @@ class EditPostCubit extends Cubit<EditPostState> {
 
   void setImage(String path) => emit(state.copyWith(imagePath: path));
 
+  /// Forget a newly picked cover and go back to the one the post has.
+  void discardNewImage() => emit(state.copyWith(clearImage: true));
+
   void setStatus(PublishStatus status) =>
       emit(state.copyWith(status: status));
 
   Future<void> submit({required String title, required String body}) async {
     if (state.isSubmitting) return;
-    emit(state.copyWith(isSubmitting: true));
+    emit(state.copyWith(isSubmitting: true, fieldErrors: const {}));
 
     final result = await _updatePost(
       UpdatePostParams(
@@ -89,15 +101,19 @@ class EditPostCubit extends Cubit<EditPostState> {
 
     result.fold(
       (failure) {
-        // Laravel validation errors: show the first one.
+        // Laravel validation errors appear under the fields they belong to.
         final fields = failure is ServerFailure
             ? failure.fieldErrors
             : const <String, List<String>>{};
-        final firstField = fields.values.expand((l) => l).firstOrNull;
 
         emit(state.copyWith(
           isSubmitting: false,
-          errorMessage: firstField ?? failure.message,
+          fieldErrors: fields,
+          errorMessage: fields.isNotEmpty
+              ? null
+              : failure is AuthFailure
+                  ? 'Sign in to edit posts.'
+                  : failure.message,
         ));
       },
       (post) => emit(state.copyWith(
