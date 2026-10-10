@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter/foundation.dart';
 
 import '../../../core/error/failures.dart';
@@ -39,6 +40,14 @@ class FollowStore extends ChangeNotifier {
     notifyListeners();
   }
 
+  void seed(int userId, bool isFollowing, {bool overwrite = true}) {
+    final id = userId.toString();
+    if (!overwrite && _following.containsKey(id)) return;
+    if (_following[id] == isFollowing) return;
+    _following[id] = isFollowing;
+    scheduleMicrotask(notifyListeners);
+  }
+
   bool isFollowing(String userId) => _following[userId] ?? false;
   bool isLoading(String userId) => _inFlight.contains(userId);
   int? followersCount(String userId) => _followers[userId];
@@ -54,7 +63,7 @@ class FollowStore extends ChangeNotifier {
     _inFlight.add(userId);
     notifyListeners();
 
-    final userIdInt = int.parse(userId);
+    
     final result = before
         ? await _unfollow(UnfollowUserParams(userId: id))
         : await _follow(FollowUserParams(userId: id));

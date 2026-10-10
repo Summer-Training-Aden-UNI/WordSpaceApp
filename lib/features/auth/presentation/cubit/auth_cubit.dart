@@ -51,6 +51,7 @@ class AuthCubit extends Cubit<AuthState> {
     if (isClosed) return null;
     return result.fold<Failure?>((f) => f, (user) {
       emit(AuthAuthenticated(user));
+      refreshUser();
       return null;
     });
   }
@@ -74,6 +75,7 @@ class AuthCubit extends Cubit<AuthState> {
     if (isClosed) return null;
     return result.fold<Failure?>((f) => f, (user) {
       emit(AuthAuthenticated(user));
+      refreshUser();
       return null;
     });
   }
@@ -84,7 +86,36 @@ class AuthCubit extends Cubit<AuthState> {
   }
 
   void continueAsGuest() => emit(const AuthGuest());
+  /// After "Edit profile": keeps the signed-in user in step with the server
+  /// (no API call). [avatarUrl] is the saved photo, or null if removed.
+  void updateUser({
+    required String name,
+    String? username,
+    String? avatarUrl,
+  }) {
+    final s = state;
+    if (s is! AuthAuthenticated) return;
 
+    emit(
+      AuthAuthenticated(
+        User(
+          id: s.user.id,
+          name: name,
+          username: username ?? s.user.username,
+          email: s.user.email,
+          avatarUrl: avatarUrl,
+        ),
+      ),
+    );
+  }
+
+  /// Reloads the signed-in user from GET /user (adds the avatar URL).
+  Future<void> refreshUser() async {
+    if (state is! AuthAuthenticated) return;
+    final result = await _getCurrentUser(const NoParams());
+    if (isClosed || state is! AuthAuthenticated) return;
+    result.fold((_) {}, (user) => emit(AuthAuthenticated(user)));
+  }
   /// A guest wants to sign in: back to the Welcome screen.
   void leaveGuest() {
     if (state is AuthGuest) emit(const AuthUnauthenticated());

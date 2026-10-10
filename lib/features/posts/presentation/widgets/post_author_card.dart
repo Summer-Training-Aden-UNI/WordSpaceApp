@@ -9,10 +9,14 @@ class PostAuthorCard extends StatelessWidget {
     super.key,
     required this.post,
     this.onFollowTap,
+    this.onAuthorTap,
   });
 
   final Post post;
   final VoidCallback? onFollowTap;
+
+  /// Opens the author's profile.
+  final VoidCallback? onAuthorTap;
 
   String _formatDate(DateTime date) {
     final difference = DateTime.now().difference(date);
@@ -32,68 +36,67 @@ class PostAuthorCard extends StatelessWidget {
     final author = post.author;
     final hasAvatar = author.avatarUrl?.trim().isNotEmpty == true;
 
-    return Container(
-      padding: const EdgeInsets.all(14),
-      decoration: BoxDecoration(
-        color: AppColors.surfaceContainerLowest,
-        borderRadius: BorderRadius.circular(18),
-        border: Border.all(color: AppColors.borderLight),
-      ),
-      child: Row(
-        children: [
-          CircleAvatar(
-            radius: 24,
-            backgroundColor: AppColors.primary.withValues(alpha: 0.12),
-            backgroundImage:
-                hasAvatar ? NetworkImage(author.avatarUrl!) : null,
-            child: hasAvatar
-                ? null
-                : Text(
-                    author.name.isEmpty
-                        ? '?'
-                        : author.name[0].toUpperCase(),
-                    style: AppFonts.headlineSm(
-                      color: AppColors.primary,
+    return GestureDetector(
+      onTap: onAuthorTap,
+      behavior: HitTestBehavior.opaque,
+      child: Container(
+        padding: const EdgeInsets.all(14),
+        decoration: BoxDecoration(
+          color: AppColors.surfaceContainerLowest,
+          borderRadius: BorderRadius.circular(18),
+          border: Border.all(color: AppColors.borderLight),
+        ),
+        child: Row(
+          children: [
+            CircleAvatar(
+              radius: 24,
+              backgroundColor: AppColors.primary.withValues(alpha: 0.12),
+              backgroundImage:
+                  hasAvatar ? NetworkImage(author.avatarUrl!) : null,
+              child: hasAvatar
+                  ? null
+                  : Text(
+                      author.name.isEmpty ? '?' : author.name[0].toUpperCase(),
+                      style: AppFonts.headlineSm(color: AppColors.primary),
                     ),
-                  ),
-          ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  author.name,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: AppFonts.headlineSm(
-                    color: AppColors.onSurface,
-                  ),
-                ),
-                if (author.headline?.isNotEmpty == true)
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
                   Text(
-                    author.headline!,
+                    author.name,
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
-                    style: AppFonts.bodySm(
-                      color: AppColors.slateMuted,
+                    style: AppFonts.headlineSm(color: AppColors.onSurface),
+                  ),
+                  if (author.headline?.isNotEmpty == true)
+                    Text(
+                      author.headline!,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: AppFonts.bodySm(color: AppColors.slateMuted),
                     ),
+                  Text(
+                    _formatDate(post.publishedAt),
+                    style: AppFonts.bodySm(color: AppColors.slateMuted),
                   ),
-                Text(
-                  _formatDate(post.publishedAt),
-                  style: AppFonts.bodySm(
-                    color: AppColors.slateMuted,
-                  ),
-                ),
-              ],
+                ],
+              ),
             ),
-          ),
-          if (onFollowTap != null)
-            TextButton(
-              onPressed: onFollowTap,
-              child: const Text('Follow'),
-            ),
-        ],
+            if (onAuthorTap != null)
+              const Icon(
+                Icons.chevron_right,
+                color: AppColors.slateMuted,
+              ),
+            if (onFollowTap != null)
+              TextButton(
+                onPressed: onFollowTap,
+                child: const Text('Follow'),
+              ),
+          ],
+        ),
       ),
     );
   }

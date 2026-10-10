@@ -3,58 +3,81 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:image_picker/image_picker.dart';
 
+import '../../../../core/theme/app_colors.dart';
+import '../../../../core/theme/app_fonts.dart';
 import '../../../../core/widgets/navigation/app_top_bar.dart';
 import '../../../../core/widgets/widgets.dart';
 import '../../../../injection_container.dart';
-import '../cubit/create_post_cubit.dart';
+import '../../domain/entities/post.dart';
+import '../cubit/create_post_cubit.dart' show PublishStatus;
+import '../cubit/edit_post_cubit.dart';
 import '../widgets/post_form_widgets.dart';
 
-/// Create Post screen. Pops with the created Post on success.
-class CreatePostPage extends StatelessWidget {
-  const CreatePostPage({super.key, this.userName, this.userImageUrl});
+/// Edit my post. Looks exactly like the Create Post page (same fields, cover
+/// picker and publishing options), filled with the post's current values.
+/// Pops with an [EditPostResult] when it was saved.
+class EditPostPage extends StatelessWidget {
+  const EditPostPage({super.key, required this.post});
 
-  final String? userName;
-  final String? userImageUrl;
+  final Post post;
 
   @override
   Widget build(BuildContext context) {
     return BlocProvider(
-      create: (_) => sl<CreatePostCubit>(),
-      child: _CreatePostView(userName: userName, userImageUrl: userImageUrl),
+      create: (_) => EditPostCubit(original: post, updatePost: sl()),
+      child: _EditPostView(post: post),
     );
   }
 }
 
-class _CreatePostView extends StatefulWidget {
-  const _CreatePostView({this.userName, this.userImageUrl});
+class _EditPostView extends StatefulWidget {
+  const _EditPostView({required this.post});
 
-  final String? userName;
-  final String? userImageUrl;
+  final Post post;
 
   @override
-  State<_CreatePostView> createState() => _CreatePostViewState();
+  State<_EditPostView> createState() => _EditPostViewState();
 }
 
-class _CreatePostViewState extends State<_CreatePostView> {
+class _EditPostViewState extends State<_EditPostView> {
   static const _maxImageBytes = 2 * 1024 * 1024; // the API's limit
   static const _allowedExtensions = ['.jpg', '.jpeg', '.png', '.webp'];
 
   final _formKey = GlobalKey<FormState>();
-  final _titleController = TextEditingController();
-  final _bodyController = TextEditingController();
   final _picker = ImagePicker();
 
-  Uint8List? _selectedImageBytes;
+  late final TextEditingController _title;
+  late final TextEditingController _body;
+
+  /// Preview of a newly picked cover (web needs the bytes).
+  Uint8List? _newCoverBytes;
+
+  @override
+  void initState() {
+    super.initState();
+    _title = TextEditingController(text: widget.post.title);
+    _body = TextEditingController(
+      text: widget.post.body.trim().isNotEmpty
+          ? widget.post.body
+          : widget.post.excerpt,
+    );
+  }
 
   @override
   void dispose() {
-    _titleController.dispose();
-    _bodyController.dispose();
+    _title.dispose();
+    _body.dispose();
     super.dispose();
   }
 
-  Future<void> _pickImage() async {
-    final cubit = context.read<CreatePostCubit>();
+  /// The cover the post has now (null when it has none).
+  String? get _existingCoverUrl {
+    final url = widget.post.coverImageUrl?.trim();
+    return (url == null || url.isEmpty) ? null : url;
+  }
+
+  Future<void> _pickCover() async {
+    final cubit = context.read<EditPostCubit>();
 
     try {
       final file = await _picker.pickImage(
@@ -62,91 +85,62 @@ class _CreatePostViewState extends State<_CreatePostView> {
         maxWidth: 1600,
         imageQuality: 85,
       );
-
       if (file == null || !mounted) return;
 
       final name = file.name.toLowerCase();
-
       if (!_allowedExtensions.any(name.endsWith)) {
         AppSnackBar.error(context, 'Please choose a JPG, PNG or WebP image.');
         return;
       }
 
       final bytes = await file.readAsBytes();
+      if (!mounted) return;
 
       if (bytes.length > _maxImageBytes) {
-        if (mounted) {
-          AppSnackBar.error(context, 'The image must be under 2MB.');
-        }
+        AppSnackBar.error(context, 'The image must be under 2MB.');
         return;
       }
 
-      setState(() {
-        _selectedImageBytes = bytes;
-      });
-
+      setState(() => _newCoverBytes = bytes);
       cubit.setImage(file.path);
     } catch (e) {
-      if (mounted) {
-        AppSnackBar.error(context, 'Couldn\'t open your gallery.');
-      }
-      debugPrint('Image picker error: $e');
+      debugPrint('Cover picker error: $e');
+      if (mounted) AppSnackBar.error(context, "Couldn't open your gallery.");
     }
   }
 
-  void _removeImage() {
-    setState(() {
-      _selectedImageBytes = null;
-    });
-
-    context.read<CreatePostCubit>().removeImage();
+  /// The X on a newly picked cover: back to the one the post already has.
+  void _discardNewCover() {
+    setState(() => _newCoverBytes = null);
+    context.read<EditPostCubit>().discardNewImage();
   }
 
   void _submit() {
     FocusScope.of(context).unfocus();
-
     if (!_formKey.currentState!.validate()) return;
-
-    context.read<CreatePostCubit>().submit(
-      title: _titleController.text,
-      body: _bodyController.text,
-    );
+    context.read<EditPostCubit>().submit(title: _title.text, body: _body.text);
   }
 
   @override
   Widget build(BuildContext context) {
-    final keyboardOpen = MediaQuery.of(context).viewInsets.bottom > 0;
-
-    return BlocConsumer<CreatePostCubit, CreatePostState>(
-      listenWhen: (previous, current) =>
-          current.errorMessage != null || current.createdPost != null,
+    return BlocConsumer<EditPostCubit, EditPostState>(
+      listenWhen: (prev, curr) =>
+          curr.errorMessage != null ||
+          (curr.result != null && prev.result != curr.result),
       listener: (context, state) {
-        if (state.errorMessage != null) {
-          AppSnackBar.error(context, state.errorMessage!);
-        }
+        final error = state.errorMessage;
+        if (error != null) AppSnackBar.error(context, error);
 
-        final post = state.createdPost;
-
-        if (post != null) {
-          final message = state.status == PublishStatus.published
-              ? 'Post published successfully!'
-              : 'Draft saved successfully!';
-
-          AppSnackBar.show(context, message);
-          Navigator.of(context).pop(post);
-        }
+        final result = state.result;
+        if (result != null) Navigator.pop(context, result);
       },
       builder: (context, state) {
-        final cubit = context.read<CreatePostCubit>();
+        final cubit = context.read<EditPostCubit>();
         final isPublish = state.status == PublishStatus.published;
+        final hasCover = state.imagePath != null || _existingCoverUrl != null;
 
         return Scaffold(
-          appBar: AppTopBar(
-            title: 'Add',
-            showBack: true,
-            userName: widget.userName,
-            userImageUrl: widget.userImageUrl,
-          ),
+          appBar: const AppTopBar(title: 'Edit post', showBack: true),
           body: GestureDetector(
             onTap: () => FocusScope.of(context).unfocus(),
             child: Form(
@@ -159,7 +153,7 @@ class _CreatePostViewState extends State<_CreatePostView> {
                   PostFormTextField(
                     label: 'Post Title',
                     isRequired: true,
-                    controller: _titleController,
+                    controller: _title,
                     hint: 'Enter your post title...',
                     maxLength: 100,
                     textInputAction: TextInputAction.next,
@@ -170,17 +164,20 @@ class _CreatePostViewState extends State<_CreatePostView> {
                   ),
                   const SizedBox(height: 20),
                   PostCoverPicker(
+                    label:
+                        hasCover ? 'Cover Image' : 'Add Cover Image (Optional)',
                     imagePath: state.imagePath,
-                    imageBytes: _selectedImageBytes,
+                    imageBytes: _newCoverBytes,
+                    existingImageUrl: _existingCoverUrl,
                     errorText: state.fieldError('image'),
-                    onPick: _pickImage,
-                    onRemove: _removeImage,
+                    onPick: _pickCover,
+                    onRemove: _discardNewCover,
                   ),
                   const SizedBox(height: 20),
                   PostFormTextField(
                     label: 'Content',
                     isRequired: true,
-                    controller: _bodyController,
+                    controller: _body,
                     hint:
                         'Share your thoughts, tutorials, or insights with '
                         'the community...',
@@ -208,17 +205,23 @@ class _CreatePostViewState extends State<_CreatePostView> {
                   PostPublishOptionTile(
                     icon: Icons.description_outlined,
                     title: 'Save as Draft',
-                    subtitle: 'Keep it private and finish editing later',
+                    subtitle: 'Hide it from everyone until you publish again',
                     selected: !isPublish,
                     onTap: () => cubit.setStatus(PublishStatus.draft),
                   ),
+                  if (!isPublish)
+                    Padding(
+                      padding: const EdgeInsets.only(top: 8),
+                      child: Text(
+                        'A draft is removed from the feed and your profile.',
+                        style: AppFonts.bodySm(color: AppColors.slateMuted),
+                      ),
+                    ),
                   const SizedBox(height: 24),
                   AppButton(
-                    label: isPublish ? 'Publish Post' : 'Save Draft',
-                    icon: isPublish ? Icons.send_outlined : Icons.save_outlined,
-                    trailingIcon: isPublish
-                        ? Icons.send_outlined
-                        : Icons.save_outlined,
+                    label: isPublish ? 'Save Changes' : 'Save as Draft',
+                    icon: Icons.save_outlined,
+                    trailingIcon: Icons.save_outlined,
                     isLoading: state.isSubmitting,
                     onPressed: _submit,
                   ),
@@ -226,16 +229,6 @@ class _CreatePostViewState extends State<_CreatePostView> {
               ),
             ),
           ),
-          bottomNavigationBar: keyboardOpen
-              ? null
-              : BottomNavBar(
-                  currentTab: NavTab.create,
-                  onTabSelected: (tab) {
-                    if (tab != NavTab.create) {
-                      Navigator.of(context).maybePop(tab);
-                    }
-                  },
-                ),
         );
       },
     );

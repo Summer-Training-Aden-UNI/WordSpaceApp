@@ -19,12 +19,16 @@ class PostCard extends StatelessWidget {
     required this.onLikeTap,
     this.onTap,
     this.onCommentTap,
+    this.showAuthor = true,
   });
 
   final Post post;
   final VoidCallback onLikeTap;
   final VoidCallback? onTap;
   final VoidCallback? onCommentTap;
+
+  /// Set to false on a profile page, where every card has the same author.
+  final bool showAuthor;
 
   static final _radius = BorderRadius.circular(16);
 
@@ -62,16 +66,17 @@ class PostCard extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.stretch,
             mainAxisSize: MainAxisSize.min,
             children: [
-              Padding(
-                padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
-                child: PostAuthorHeader(
-                  author: post.author,
-                  publishedAt: post.publishedAt,
-                  isFeatured: featured,
+              if (showAuthor)
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
+                  child: PostAuthorHeader(
+                    author: post.author,
+                    publishedAt: post.publishedAt,
+                    isFeatured: featured,
+                  ),
                 ),
-              ),
               Padding(
-                padding: const EdgeInsets.fromLTRB(16, 12, 16, 0),
+                padding: EdgeInsets.fromLTRB(16, showAuthor ? 12 : 16, 16, 0),
                 child: Text(
                   post.title,
                   maxLines: 3,
