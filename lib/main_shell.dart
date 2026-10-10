@@ -103,6 +103,7 @@ class _ShellViewState extends State<_ShellView> {
                 ? SearchPage(
                     onPostTap: (post) => openPostDetails(context, post),
                     onCommentTap: (post) => openPostDetails(context, post),
+                      onUserTap: (user) => openProfile(context, user.id),
                   )
                 : const SizedBox.shrink(),
             _opened.contains(NavTab.favorites)

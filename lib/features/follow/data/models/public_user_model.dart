@@ -5,9 +5,13 @@ class PublicUserModel extends PublicUser {
     required super.id,
     required super.name,
     super.username,
+    super.bio,
+    super.avatarUrl,
   });
 
-  // NOTE: field names are guesses. Check them against PublicUserResource.php.
+
+  /// { id, name, username, bio, avatar_url, created_at }
+  /// GET /users/{id} wraps it as { user: {...}, followers_count, ... }.
   factory PublicUserModel.fromJson(Map<String, dynamic> json) {
     // Tolerate { user: {...} } and { data: {...} } wrappers.
     final j = json['user'] is Map<String, dynamic>
@@ -15,10 +19,13 @@ class PublicUserModel extends PublicUser {
         : json['data'] is Map<String, dynamic>
             ? json['data'] as Map<String, dynamic>
             : json;
+
     return PublicUserModel(
       id: (j['id'] as num).toInt(),
       name: j['name']?.toString() ?? '',
       username: j['username']?.toString(),
+      bio: j['bio']?.toString(),
+      avatarUrl: (j['avatar_url'] ?? j['avatar'])?.toString(),
     );
   }
 }

@@ -11,7 +11,8 @@ class ProfileRepositoryImpl implements ProfileRepository {
   ProfileRepositoryImpl(this.remote);
 
   @override
-  Future<Either<Failure, Profile>> getProfile() => safeCall(() => remote.getProfile());
+  Future<Either<Failure, Profile>> getProfile() =>
+      safeCall(() => remote.getProfile());
 
   @override
   Future<Either<Failure, Profile>> updateProfile({
@@ -19,7 +20,15 @@ class ProfileRepositoryImpl implements ProfileRepository {
     String? username,
     String? bio,
     String? avatarPath,
+    bool removeAvatar = false,
   }) =>
-      safeCall(() => remote.updateProfile(
-          name: name, username: username, bio: bio, avatarPath: avatarPath));
+      safeCall(
+        () => remote.updateProfile(
+          name: name,
+          username: username,
+          bio: bio,
+          avatarPath: avatarPath,
+          removeAvatar: removeAvatar,
+        ),
+      );
 }

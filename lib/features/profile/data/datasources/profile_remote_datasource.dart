@@ -3,7 +3,7 @@ import 'package:dio/dio.dart';
 import '../../../../core/constants/api_constants.dart';
 import '../models/profile_model.dart';
 
-// Name of the multipart avatar field expected by Laravel. Change if different.
+// Name of the multipart avatar field expected by the API.
 const _avatarField = 'avatar';
 
 abstract class ProfileRemoteDataSource {
@@ -13,6 +13,7 @@ abstract class ProfileRemoteDataSource {
     String? username,
     String? bio,
     String? avatarPath,
+    bool removeAvatar = false,
   });
 }
 
@@ -32,21 +33,26 @@ class ProfileRemoteDataSourceImpl implements ProfileRemoteDataSource {
     String? username,
     String? bio,
     String? avatarPath,
+    bool removeAvatar = false,
   }) async {
+    // The API takes multipart/form-data sent with POST and _method=PUT
+    // (PHP does not read form-data on a real PUT).
     final fields = <String, dynamic>{
+      '_method': 'PUT',
       'name': name,
       'username': ?username,
       'bio': ?bio,
+      if (removeAvatar) 'remove_avatar': '1',
     };
-    final Response res;
-    if (avatarPath != null) {
-      // Laravel does not read multipart data on a real PUT: use POST + _method.
-      fields['_method'] = 'PUT';
+
+    if (avatarPath != null && !removeAvatar) {
       fields[_avatarField] = await MultipartFile.fromFile(avatarPath);
-      res = await dio.post(ApiConstants.profile, data: FormData.fromMap(fields));
-    } else {
-      res = await dio.put(ApiConstants.profile, data: fields);
     }
+
+    final res = await dio.post(
+      ApiConstants.profile,
+      data: FormData.fromMap(fields),
+    );
     return ProfileModel.fromJson(res.data as Map<String, dynamic>);
   }
 }

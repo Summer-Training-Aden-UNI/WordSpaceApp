@@ -12,7 +12,13 @@ class UpdateProfile implements UseCase<Profile, UpdateProfileParams> {
 
   @override
   Future<Either<Failure, Profile>> call(UpdateProfileParams params) =>
-      repository.updateProfile(name: params.name, username: params.username, bio: params.bio, avatarPath: params.avatarPath);
+      repository.updateProfile(
+        name: params.name,
+        username: params.username,
+        bio: params.bio,
+        avatarPath: params.avatarPath,
+        removeAvatar: params.removeAvatar,
+      );
 }
 
 class UpdateProfileParams extends Equatable {
@@ -20,8 +26,17 @@ class UpdateProfileParams extends Equatable {
   final String? username;
   final String? bio;
   final String? avatarPath;
-  const UpdateProfileParams({required this.name, this.username, this.bio, this.avatarPath});
+  final bool removeAvatar;
+
+  const UpdateProfileParams({
+    required this.name,
+    this.username,
+    this.bio,
+    this.avatarPath,
+    this.removeAvatar = false,
+  });
 
   @override
-  List<Object?> get props => [name, username, bio, avatarPath];
+  List<Object?> get props =>
+      [name, username, bio, avatarPath, removeAvatar];
 }

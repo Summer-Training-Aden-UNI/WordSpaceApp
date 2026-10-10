@@ -84,6 +84,23 @@ class AuthCubit extends Cubit<AuthState> {
   }
 
   void continueAsGuest() => emit(const AuthGuest());
+  /// After "Edit profile": keeps the signed-in user's name and username in
+  /// step with the server (no API call).
+  void updateUser({required String name, String? username}) {
+    final s = state;
+    if (s is! AuthAuthenticated) return;
+
+    emit(
+      AuthAuthenticated(
+        User(
+          id: s.user.id,
+          name: name,
+          username: username ?? s.user.username,
+          email: s.user.email,
+        ),
+      ),
+    );
+  }
 
   /// A guest wants to sign in: back to the Welcome screen.
   void leaveGuest() {

@@ -10,5 +10,6 @@ abstract class ProfileRepository {
     String? username,
     String? bio,
     String? avatarPath,
+    bool removeAvatar = false,
   });
 }
