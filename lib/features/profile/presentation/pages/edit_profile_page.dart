@@ -23,7 +23,7 @@ class EditProfilePage extends StatefulWidget {
   final VoidCallback? onSignOut;
 
 /// Called after a successful save with the new name and username.
-  final void Function(String name, String? username)? onSaved;
+  final void Function(String name, String? username, String? avatarUrl)? onSaved;
 
   @override
   State<EditProfilePage> createState() => _EditProfilePageState();
@@ -142,7 +142,9 @@ class _EditProfilePageState extends State<EditProfilePage> {
     if (!mounted || !saved) return;
 
     final info = context.read<ProfileCubit>().state.info;
-    if (info != null) widget.onSaved?.call(info.name, info.username);
+     if (info != null) {
+      widget.onSaved?.call(info.name, info.username, info.avatarUrl);
+    }
 
     AppSnackBar.show(context, 'Profile updated');
     Navigator.pop(context, true);

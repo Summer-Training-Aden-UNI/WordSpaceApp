@@ -19,6 +19,7 @@ import '../widgets/profile_header.dart';
 class ProfilePage extends StatelessWidget {
   const ProfilePage({
     super.key,
+    this.showBack = true,
     this.currentUserName,
     this.onAvatarTap,
     this.onEditTap,
@@ -26,6 +27,7 @@ class ProfilePage extends StatelessWidget {
     this.onCommentTap,
   });
 
+ final bool showBack;
   /// Shows my avatar in the top bar (leave null on my own profile).
   final String? currentUserName;
   final VoidCallback? onAvatarTap;
@@ -48,7 +50,7 @@ class ProfilePage extends StatelessWidget {
           backgroundColor: AppColors.surface,
           appBar: AppTopBar(
             title: 'Profile',
-            showBack: true,
+            showBack: showBack,
             userName: currentUserName,
             onAvatarTap: onAvatarTap,
           ),

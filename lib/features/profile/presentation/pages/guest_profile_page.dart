@@ -6,15 +6,16 @@ import '../../../../core/widgets/widgets.dart';
 
 /// What a guest sees when opening "their" profile.
 class GuestProfilePage extends StatelessWidget {
-  const GuestProfilePage({super.key, required this.onSignInTap});
+  const GuestProfilePage({super.key, required this.onSignInTap, this.showBack = true,});
 
   final VoidCallback onSignInTap;
+  final bool showBack;
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: AppColors.surface,
-      appBar: const AppTopBar(title: 'Profile', showBack: true),
+      appBar: AppTopBar(title: 'Profile', showBack: showBack),
       body: EmptyState(
         title: 'Sign in to see your profile',
         message: 'Write posts, follow authors and keep your favorites '

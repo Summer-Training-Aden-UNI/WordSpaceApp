@@ -28,6 +28,7 @@ Future<void> openPostDetails(BuildContext context, Post post) {
         child: PostDetailsPage(
           post: post,
           userName: user?.name,
+          userImageUrl: user?.avatarUrl,
           commentsContent: CommentsSection(
             postId: post.id,
             currentUserId: user?.id,
@@ -41,6 +42,25 @@ Future<void> openPostDetails(BuildContext context, Post post) {
     ),
   );
 }
+
+/// Builds the cubit behind a profile page (mine or someone else's).
+ProfileCubit createProfileCubit({
+  required int userId,
+  required bool isMe,
+  required PostsCubit postsCubit,
+}) =>
+    ProfileCubit(
+      userId: userId,
+      isMe: isMe,
+      getProfile: di.sl(),
+      getUser: di.sl(),
+      getUserPosts: di.sl(),
+      updateProfile: di.sl(),
+      likePost: di.sl(),
+      unlikePost: di.sl(),
+      followStore: di.sl(),
+      postsCubit: postsCubit,
+    );
 
 /// The ONLY place that opens a profile: mine (editable) or someone else's.
 /// [context] must be under the PostsCubit provider.
@@ -57,17 +77,10 @@ Future<void> openProfile(BuildContext context, int userId) {
         providers: [
           // Pages opened from here (post details) read PostsCubit.
           BlocProvider<PostsCubit>.value(value: postsCubit),
-          BlocProvider<ProfileCubit>(
-            create: (_) => ProfileCubit(
+           BlocProvider<ProfileCubit>(
+            create: (_) => createProfileCubit(
               userId: userId,
               isMe: isMe,
-              getProfile: di.sl(),
-              getUser: di.sl(),
-              getUserPosts: di.sl(),
-              updateProfile: di.sl(),
-              likePost: di.sl(),
-              unlikePost: di.sl(),
-              followStore: di.sl(),
               postsCubit: postsCubit,
             )..load(),
           ),
@@ -115,8 +128,11 @@ Future<void> openEditProfile(BuildContext context) {
         child: EditProfilePage(
           onSignOut: () => signOut(context),
           // Keeps the logged-in session in step with the new name.
-          onSaved: (name, username) =>
-              auth.updateUser(name: name, username: username),
+           onSaved: (name, username, avatarUrl) => auth.updateUser(
+            name: name,
+            username: username,
+            avatarUrl: avatarUrl,
+          ),
         ),
       ),
     ),

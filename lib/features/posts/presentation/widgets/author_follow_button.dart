@@ -4,14 +4,12 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../../../core/error/failures.dart';
 import '../../../../core/widgets/widgets.dart';
 import '../../../../injection_container.dart';
-import '../../../follow/domain/usecases/follow_user.dart';
-import '../../../follow/domain/usecases/unfollow_user.dart';
 import '../../../auth/presentation/cubit/auth_cubit.dart';
+import '../../../follow/presentation/follow_store.dart';
 
-
-/// Follow / Following pill for a post author. Keeps its own state and calls
-/// the follow use cases directly. Not optimistic: shows a spinner while the
-/// request runs, then shows the state the server returned.
+/// Follow / Following pill for a post author. It only DRAWS the shared
+/// [FollowStore] state, so every card, list and profile agrees.
+/// Not optimistic: shows a spinner while the request runs.
 class AuthorFollowButton extends StatefulWidget {
   const AuthorFollowButton({
     super.key,
@@ -20,6 +18,8 @@ class AuthorFollowButton extends StatefulWidget {
   });
 
   final int authorId;
+
+  /// What the server said when this post was loaded.
   final bool initialIsFollowing;
 
   @override
@@ -27,58 +27,56 @@ class AuthorFollowButton extends StatefulWidget {
 }
 
 class _AuthorFollowButtonState extends State<AuthorFollowButton> {
-  late bool _following = widget.initialIsFollowing;
-  bool _loading = false;
+  final FollowStore _store = sl<FollowStore>();
+
+  String get _id => widget.authorId.toString();
+
+  @override
+  void initState() {
+    super.initState();
+    // First time we see this author: use the server value. If the store
+    // already knows (an earlier follow / unfollow), keep that.
+    _store.seed(widget.authorId, widget.initialIsFollowing, overwrite: false);
+  }
 
   @override
   void didUpdateWidget(covariant AuthorFollowButton old) {
     super.didUpdateWidget(old);
-    // The feed was refreshed: trust the server value again.
+    // Fresh data from the server (the feed was refreshed): it wins.
     if (old.initialIsFollowing != widget.initialIsFollowing ||
         old.authorId != widget.authorId) {
-      _following = widget.initialIsFollowing;
+      _store.seed(widget.authorId, widget.initialIsFollowing);
     }
   }
 
   Future<void> _toggle() async {
-    if (_loading) return;
-    setState(() => _loading = true);
-
-    final result = _following
-        ? await sl<UnfollowUser>()(UnfollowUserParams(userId: widget.authorId))
-        : await sl<FollowUser>()(FollowUserParams(userId: widget.authorId));
-
-    if (!mounted) return;
-    result.fold(
-      (failure) {
-        setState(() => _loading = false);
-        AppSnackBar.error(
-          context,
-          failure is AuthFailure
-              ? 'Sign in to follow authors.'
-              : failure.message,
-        );
-      },
-      (r) => setState(() {
-        _following = r.isFollowing;
-        _loading = false;
-      }),
-    );
+    final failure = await _store.toggle(_id);
+    if (failure != null && mounted) {
+      AppSnackBar.error(
+        context,
+        failure is AuthFailure
+            ? 'Sign in to follow authors.'
+            : failure.message,
+      );
+    }
   }
 
   @override
   Widget build(BuildContext context) {
     // You cannot follow yourself (the API answers 422), so hide the button
-    // on your own posts. watch() = it updates if you log in or out.
+    // on your own posts.
     final auth = context.watch<AuthCubit>().state;
     if (auth is AuthAuthenticated && auth.user.id == widget.authorId) {
       return const SizedBox.shrink();
     }
 
-    return FollowButton(
-      isFollowing: _following,
-      isLoading: _loading,
-      onPressed: _toggle,
+    return ListenableBuilder(
+      listenable: _store,
+      builder: (context, _) => FollowButton(
+        isFollowing: _store.isFollowing(_id),
+        isLoading: _store.isLoading(_id),
+        onPressed: _toggle,
+      ),
     );
   }
 }

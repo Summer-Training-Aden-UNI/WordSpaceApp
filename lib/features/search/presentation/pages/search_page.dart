@@ -7,7 +7,6 @@ import '../../../../core/widgets/navigation/app_top_bar.dart';
 import '../../../../core/widgets/widgets.dart';
 import '../../../../injection_container.dart';
 import '../../../follow/domain/entities/public_user.dart';
-import '../../../follow/presentation/follow_store.dart';
 import '../../../posts/domain/entities/post.dart';
 import '../../../posts/presentation/widgets/post_card.dart';
 import '../state/search_cubit.dart';
@@ -50,7 +49,7 @@ class SearchPage extends StatelessWidget {
         unlikePost: sl(),
       ),
       child: _SearchView(
-        followStore: sl<FollowStore>(),
+        
         userName: userName,
         userImageUrl: userImageUrl,
         onAvatarTap: onAvatarTap,
@@ -65,7 +64,6 @@ class SearchPage extends StatelessWidget {
 
 class _SearchView extends StatelessWidget {
   const _SearchView({
-    required this.followStore,
     this.userName,
     this.userImageUrl,
     this.onAvatarTap,
@@ -75,7 +73,7 @@ class _SearchView extends StatelessWidget {
     this.onNavTabSelected,
   });
 
-  final FollowStore followStore;
+  
   final String? userName;
   final String? userImageUrl;
   final VoidCallback? onAvatarTap;
@@ -134,7 +132,6 @@ class _SearchView extends StatelessWidget {
                 }
                 return _Results(
                   state: state,
-                  followStore: followStore,
                   onPostTap: onPostTap,
                   onCommentTap: onCommentTap,
                   onUserTap: onUserTap,
@@ -206,14 +203,12 @@ class _NoResults extends StatelessWidget {
 class _Results extends StatelessWidget {
   const _Results({
     required this.state,
-    required this.followStore,
     this.onPostTap,
     this.onCommentTap,
     this.onUserTap,
   });
 
   final SearchState state;
-  final FollowStore followStore;
   final ValueChanged<Post>? onPostTap;
   final ValueChanged<Post>? onCommentTap;
   final ValueChanged<PublicUser>? onUserTap;
