@@ -233,7 +233,7 @@ class _CreatePostViewState extends State<_CreatePostView> {
                   currentTab: NavTab.create,
                   onTabSelected: (tab) {
                     if (tab != NavTab.create) {
-                      Navigator.of(context).maybePop();
+                      Navigator.of(context).maybePop(tab);
                     }
                   },
                 ),

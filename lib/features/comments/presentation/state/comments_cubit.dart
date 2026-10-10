@@ -16,6 +16,7 @@ class CommentsCubit extends Cubit<CommentsState> {
     int initialCount = 0,
     this.currentUserId,
     this.currentUserName,
+    this.onCountChanged,
   })  : _getComments = getComments,
         _addComment = addComment,
         _deleteComment = deleteComment,
@@ -27,6 +28,7 @@ class CommentsCubit extends Cubit<CommentsState> {
 
   final int? currentUserId;
   final String? currentUserName;
+  final void Function(int count)? onCountChanged;
 
   final GetComments _getComments;
   final AddComment _addComment;
@@ -53,6 +55,9 @@ class CommentsCubit extends Cubit<CommentsState> {
           comments: page.items,
           page: page.currentPage,
           hasMore: page.hasMore,
+          // The API returns every comment, so the list length IS the count.
+          commentsCount:
+              page.hasMore ? state.commentsCount : page.items.length,
         ),
       ),
     );
@@ -166,4 +171,13 @@ class CommentsCubit extends Cubit<CommentsState> {
   /// Guests get a friendly message instead of the raw "Unauthenticated".
   String _msg(Failure failure) =>
       failure is AuthFailure ? 'Sign in to comment.' : failure.message;
+      /// Reports every change of the count, so other screens can follow it.
+  @override
+  void onChange(Change<CommentsState> change) {
+    super.onChange(change);
+    if (change.currentState.commentsCount !=
+        change.nextState.commentsCount) {
+      onCountChanged?.call(change.nextState.commentsCount);
+    }
+  }
 }

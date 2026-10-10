@@ -13,7 +13,8 @@ import '../widgets/favorites_sign_in_prompt.dart';
 class FavoritesPage extends StatelessWidget {
   const FavoritesPage({
     super.key,
-    required this.onNavTabSelected,
+    this.onNavTabSelected,
+    this.onExploreTap,
     this.userName,
     this.userImageUrl,
     this.onAvatarTap,
@@ -21,7 +22,8 @@ class FavoritesPage extends StatelessWidget {
     this.onSignInTap,
   });
 
-  final ValueChanged<NavTab> onNavTabSelected;
+final ValueChanged<NavTab>? onNavTabSelected;
+final VoidCallback? onExploreTap;
 
   final String? userName;
   final String? userImageUrl;
@@ -67,7 +69,8 @@ class FavoritesPage extends StatelessWidget {
           if (state is FavoritesLoaded) {
             if (state.posts.isEmpty) {
               return FavoritesEmptyState(
-                onExploreTap: () => onNavTabSelected(NavTab.home),
+                 onExploreTap:
+                    onExploreTap ?? () => onNavTabSelected?.call(NavTab.home),
               );
             }
 
@@ -88,10 +91,12 @@ class FavoritesPage extends StatelessWidget {
           return const SizedBox.shrink();
         },
       ),
-      bottomNavigationBar: BottomNavBar(
-        currentTab: NavTab.favorites,
-        onTabSelected: onNavTabSelected,
-      ),
+     bottomNavigationBar: onNavTabSelected == null
+          ? null
+          : BottomNavBar(
+              currentTab: NavTab.favorites,
+              onTabSelected: onNavTabSelected!,
+            ),
     );
   }
 }

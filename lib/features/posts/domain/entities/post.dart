@@ -45,6 +45,7 @@ class Post extends Equatable {
     String? body,
     int? likeCount,
     bool? isLiked,
+    int? commentCount,
   }) =>
       Post(
         id: id,
@@ -55,7 +56,7 @@ class Post extends Equatable {
         publishedAt: publishedAt,
         readTimeMinutes: readTimeMinutes,
         likeCount: likeCount ?? this.likeCount,
-        commentCount: commentCount,
+        commentCount: commentCount ?? this.commentCount,
         coverImageUrl: coverImageUrl,
         tag: tag,
         isFeatured: isFeatured,

@@ -28,6 +28,8 @@ Future<void> openPostDetails(BuildContext context, Post post) {
             currentUserId: user?.id,
             currentUserName: user?.name,
             initialCount: post.commentCount,
+             onCountChanged: (count) =>
+                postsCubit.setCommentCount(post.id, count),
           ),
         ),
       ),
