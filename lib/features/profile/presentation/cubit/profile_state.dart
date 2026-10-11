@@ -3,6 +3,7 @@ import 'package:equatable/equatable.dart';
 import '../../../posts/domain/entities/post.dart';
 
 enum ProfileStatus { loading, success, failure }
+enum ProfileTab { published, drafts }
 
 /// What the header needs. It is filled from GET /profile (my profile) or
 /// GET /users/{id} (someone else), so the page does not care which one.
@@ -15,6 +16,7 @@ class ProfileInfo extends Equatable {
     this.avatarUrl,
     this.postsCount = 0,
     this.followersCount = 0,
+    this.draftsCount = 0,
   });
 
   final int id;
@@ -24,10 +26,11 @@ class ProfileInfo extends Equatable {
   final String? avatarUrl;
   final int postsCount;
   final int followersCount;
+  final int draftsCount;
 
   @override
   List<Object?> get props =>
-      [id, name, username, bio, avatarUrl, postsCount, followersCount];
+      [id, name, username, bio, avatarUrl, postsCount, followersCount, draftsCount];
 }
 
 class ProfileState extends Equatable {
@@ -42,6 +45,12 @@ class ProfileState extends Equatable {
     this.errorMessage,
     this.postsError,
     this.actionError,
+    this.tab = ProfileTab.published,
+    this.drafts = const [],
+    this.draftsPage = 1,
+    this.draftsHasMore = false,
+    this.isLoadingDrafts = false,
+    this.draftsError,
   });
 
   final ProfileStatus status;
@@ -64,6 +73,13 @@ class ProfileState extends Equatable {
   /// One-shot message for a failed like / save / load more (snackbar).
   /// Not carried over by [copyWith].
   final String? actionError;
+  /// Which list is shown on my own profile.
+  final ProfileTab tab;
+  final List<Post> drafts;
+  final int draftsPage;
+  final bool draftsHasMore;
+  final bool isLoadingDrafts;
+  final String? draftsError;
 
   ProfileState copyWith({
     ProfileStatus? status,
@@ -76,6 +92,13 @@ class ProfileState extends Equatable {
     String? errorMessage,
     String? postsError,
     String? actionError,
+    ProfileTab? tab,
+    List<Post>? drafts,
+    int? draftsPage,
+    bool? draftsHasMore,
+    bool? isLoadingDrafts,
+    String? draftsError,
+    bool clearDraftsError = false,
   }) =>
       ProfileState(
         status: status ?? this.status,
@@ -88,6 +111,13 @@ class ProfileState extends Equatable {
         errorMessage: errorMessage,
         postsError: postsError ?? this.postsError,
         actionError: actionError,
+        tab: tab ?? this.tab,
+        drafts: drafts ?? this.drafts,
+        draftsPage: draftsPage ?? this.draftsPage,
+        draftsHasMore: draftsHasMore ?? this.draftsHasMore,
+        isLoadingDrafts: isLoadingDrafts ?? this.isLoadingDrafts,
+        draftsError:
+            clearDraftsError ? null : (draftsError ?? this.draftsError),
       );
 
   @override
@@ -102,5 +132,11 @@ class ProfileState extends Equatable {
         errorMessage,
         postsError,
         actionError,
+        tab,
+        drafts,
+        draftsPage,
+        draftsHasMore,
+        isLoadingDrafts,
+        draftsError,
       ];
 }

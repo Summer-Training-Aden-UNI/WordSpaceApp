@@ -28,6 +28,7 @@ import 'features/posts/data/datasources/post_remote_datasource.dart';
 import 'features/posts/data/repositories/post_repository_impl.dart';
 import 'features/posts/domain/repositories/post_repository.dart';
 import 'features/posts/domain/usecases/get_posts.dart';
+import 'features/posts/domain/usecases/get_my_drafts.dart';
 import 'features/posts/domain/usecases/get_post.dart';
 import 'features/posts/domain/usecases/create_post.dart';
 import 'features/posts/domain/usecases/update_post.dart';
@@ -120,6 +121,7 @@ Future<void> init() async {
         getPosts: sl(), likePost: sl(), unlikePost: sl()));
   sl.registerLazySingleton<PostRepository>(() => PostRepositoryImpl(sl()));
   sl.registerLazySingleton(() => GetPosts(sl()));
+   sl.registerLazySingleton(() => GetMyDrafts(sl()));
   sl.registerLazySingleton(() => GetPost(sl()));
   sl.registerLazySingleton(() => CreatePost(sl()));
   sl.registerLazySingleton(() => UpdatePost(sl()));

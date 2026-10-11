@@ -12,6 +12,7 @@ abstract interface class PostRepository {
   });
 
   Future<Either<Failure, Post>> getPost(int id);
+  Future<Either<Failure, Paginated<Post>>> getMyDrafts({int page = 1});
 
   Future<Either<Failure, Post>> createPost({
     required String title,

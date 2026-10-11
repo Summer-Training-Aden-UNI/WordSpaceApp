@@ -9,6 +9,7 @@ import '../../../follow/presentation/follow_store.dart';
 import '../../../likes/domain/usecases/like_post.dart';
 import '../../../likes/domain/usecases/unlike_post.dart';
 import '../../../posts/domain/entities/post.dart';
+import '../../../posts/domain/usecases/get_my_drafts.dart';
 import '../../../posts/presentation/cubit/posts_cubit.dart';
 import '../../domain/usecases/get_profile.dart';
 import '../../domain/usecases/update_profile.dart';
@@ -22,6 +23,7 @@ class ProfileCubit extends Cubit<ProfileState> {
     required GetProfile getProfile,
     required GetUser getUser,
     required GetUserPosts getUserPosts,
+    required GetMyDrafts getMyDrafts,
     required UpdateProfile updateProfile,
     required LikePost likePost,
     required UnlikePost unlikePost,
@@ -30,6 +32,7 @@ class ProfileCubit extends Cubit<ProfileState> {
   })  : _getProfile = getProfile,
         _getUser = getUser,
         _getUserPosts = getUserPosts,
+        _getMyDrafts = getMyDrafts,
         _updateProfile = updateProfile,
         _likePost = likePost,
         _unlikePost = unlikePost,
@@ -43,6 +46,7 @@ class ProfileCubit extends Cubit<ProfileState> {
   final GetProfile _getProfile;
   final GetUser _getUser;
   final GetUserPosts _getUserPosts;
+  final GetMyDrafts _getMyDrafts;
   final UpdateProfile _updateProfile;
   final LikePost _likePost;
   final UnlikePost _unlikePost;
@@ -63,9 +67,10 @@ class ProfileCubit extends Cubit<ProfileState> {
     // Start both requests, then wait for them (they run in parallel).
     final infoFuture = isMe ? _loadMine() : _loadOther();
     final postsFuture = _getUserPosts(GetUserPostsParams(userId: userId));
-
+    final draftsFuture = isMe ? _getMyDrafts(const GetMyDraftsParams()) : null;
     final infoResult = await infoFuture;
     final postsResult = await postsFuture;
+    final draftsResult = await draftsFuture; 
     if (isClosed) return;
 
     infoResult.fold(
@@ -81,6 +86,7 @@ class ProfileCubit extends Cubit<ProfileState> {
       },
       (info) {
         final posts = postsResult.fold((_) => null, (p) => p);
+        final drafts = draftsResult?.fold((_) => null, (d) => d);
         emit(ProfileState(
           status: ProfileStatus.success,
           info: info,
@@ -88,6 +94,11 @@ class ProfileCubit extends Cubit<ProfileState> {
           page: posts?.currentPage ?? 1,
           hasMore: posts?.hasMore ?? false,
           postsError: postsResult.fold((f) => f.message, (_) => null),
+          tab: state.tab,
+          drafts: drafts?.items ?? (silent ? state.drafts : const []),
+          draftsPage: drafts?.currentPage ?? 1,
+          draftsHasMore: drafts?.hasMore ?? false,
+          draftsError: draftsResult?.fold((f) => f.message, (_) => null),
         ));
       },
     );
@@ -104,6 +115,7 @@ class ProfileCubit extends Cubit<ProfileState> {
         avatarUrl: p.avatarUrl,
         postsCount: p.stats?.publishedPosts ?? 0,
         followersCount: p.stats?.followersCount ?? 0,
+        draftsCount: p.stats?.drafts ?? 0,
       ),
     );
   }
@@ -146,6 +158,43 @@ class ProfileCubit extends Cubit<ProfileState> {
           hasMore: next.hasMore,
           posts: [
             ...state.posts,
+            ...next.items.where((p) => !known.contains(p.id)),
+          ],
+        ));
+      },
+    );
+    
+  }
+  void selectTab(ProfileTab tab) {
+    if (!isMe || tab == state.tab) return;
+    emit(state.copyWith(tab: tab));
+  }
+
+  /// Loads the next page of whichever list is on screen.
+  Future<void> loadMore() =>
+      state.tab == ProfileTab.drafts ? loadMoreDrafts() : loadMorePosts();
+
+  Future<void> loadMoreDrafts() async {
+    if (!state.draftsHasMore || state.isLoadingDrafts) return;
+    emit(state.copyWith(isLoadingDrafts: true));
+
+    final result = await _getMyDrafts(
+      GetMyDraftsParams(page: state.draftsPage + 1),
+    );
+    if (isClosed) return;
+
+    result.fold(
+      (failure) => emit(
+        state.copyWith(isLoadingDrafts: false, actionError: failure.message),
+      ),
+      (next) {
+        final known = state.drafts.map((p) => p.id).toSet();
+        emit(state.copyWith(
+          isLoadingDrafts: false,
+          draftsPage: next.currentPage,
+          draftsHasMore: next.hasMore,
+          drafts: [
+            ...state.drafts,
             ...next.items.where((p) => !known.contains(p.id)),
           ],
         ));
@@ -236,6 +285,7 @@ class ProfileCubit extends Cubit<ProfileState> {
             avatarUrl: p.avatarUrl,
             postsCount: current.postsCount,
             followersCount: current.followersCount,
+            draftsCount: current.draftsCount,
           ),
         ));
         return true;

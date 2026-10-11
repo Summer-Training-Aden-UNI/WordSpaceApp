@@ -10,6 +10,7 @@ const _imageField = 'image';
 
 abstract class PostRemoteDataSource {
   Future<Paginated<PostModel>> getPosts({int page = 1, String? search});
+  Future<Paginated<PostModel>> getMyDrafts({int page = 1});
   Future<PostModel> getPost(int id);
   Future<PostModel> createPost({
     required String title,
@@ -47,6 +48,15 @@ class PostRemoteDataSourceImpl implements PostRemoteDataSource {
   Future<PostModel> getPost(int id) async {
     final res = await api.get(ApiConstants.post(id));
     return PostModel.fromJson(unwrap(res));
+  }
+
+  @override
+  Future<Paginated<PostModel>> getMyDrafts({int page = 1}) async {
+    final res = await api.get(
+      ApiConstants.myDrafts,
+      queryParameters: {'page': page},
+    );
+    return Paginated.fromResponse(res, PostModel.fromJson);
   }
 
   @override
