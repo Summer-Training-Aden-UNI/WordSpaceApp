@@ -20,6 +20,10 @@ class PostRepositoryImpl implements PostRepository {
       safeCall(() => remote.getPost(id));
 
   @override
+  Future<Either<Failure, Paginated<Post>>> getMyDrafts({int page = 1}) =>
+      safeCall(() => remote.getMyDrafts(page: page));
+
+  @override
   Future<Either<Failure, Post>> createPost({
     required String title,
     required String body,

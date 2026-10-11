@@ -19,6 +19,7 @@ class ApiConstants {
   static String postComments(int id) => '/posts/$id/comments';
   static String postLikes(int id) => '/posts/$id/likes';
   static const String likedPosts = '/user/liked-posts';
+  static const String myDrafts = '/user/drafts';
 
   // Comments
   static String comment(int id) => '/comments/$id';

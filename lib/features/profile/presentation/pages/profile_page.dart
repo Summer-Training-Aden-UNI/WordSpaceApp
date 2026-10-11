@@ -13,6 +13,7 @@ import '../cubit/profile_cubit.dart';
 import '../cubit/profile_state.dart';
 import '../widgets/profile_action_button.dart';
 import '../widgets/profile_header.dart';
+import '../widgets/profile_tabs.dart';
 
 /// My profile or someone else's: the cubit (provided above) decides which.
 /// Navigation is passed in as callbacks, like the other pages.
@@ -107,12 +108,17 @@ class _ProfileBody extends StatelessWidget {
     final store = sl<FollowStore>();
     final id = info.id.toString();
 
+    final showDrafts = cubit.isMe && state.tab == ProfileTab.drafts;
+    final posts = showDrafts ? state.drafts : state.posts;
+    final postsError = showDrafts ? state.draftsError : state.postsError;
+    final loadingMore =
+        showDrafts ? state.isLoadingDrafts : state.isLoadingMore;
     return RefreshIndicator(
       color: AppColors.primary,
       onRefresh: () => cubit.load(silent: true),
       child: NotificationListener<ScrollNotification>(
         onNotification: (n) {
-          if (n.metrics.extentAfter < 300) cubit.loadMorePosts();
+          if (n.metrics.extentAfter < 300) cubit.loadMore();
           return false;
         },
         child: CustomScrollView(
@@ -152,10 +158,18 @@ class _ProfileBody extends StatelessWidget {
                 },
               ),
             ),
-            if (state.posts.isEmpty)
+             if (cubit.isMe)
+              SliverToBoxAdapter(
+                child: ProfileTabs(
+                  selected: state.tab,
+                  draftsCount: info.draftsCount,
+                  onSelected: cubit.selectTab,
+                ),
+              ),
+            if (posts.isEmpty)
               SliverFillRemaining(
                 hasScrollBody: false,
-                child: state.postsError != null
+                child: postsError != null
                     ? EmptyState(
                         title: 'Could not load posts',
                         message: state.postsError,
@@ -163,22 +177,28 @@ class _ProfileBody extends StatelessWidget {
                         actionLabel: 'Try again',
                         onAction: () => cubit.load(silent: true),
                       )
-                    : EmptyState(
-                        title: 'No posts yet',
-                        message: cubit.isMe
-                            ? 'Posts you publish will appear here.'
-                            : 'This author has not published anything yet.',
-                        icon: Icons.article_outlined,
-                      ),
+                    : showDrafts
+                        ? EmptyState(
+                            title: 'No drafts',
+                            message: 'Posts you save as drafts will appear here.',
+                            icon: Icons.edit_note_outlined,
+                          )
+                        : EmptyState(
+                            title: 'No posts yet',
+                            message: cubit.isMe
+                                ? 'Posts you publish will appear here.'
+                                : 'This author has not published anything yet.',
+                            icon: Icons.article_outlined,
+                          ),
               )
             else
               SliverPadding(
                 padding: const EdgeInsets.fromLTRB(16, 0, 16, 24),
                 sliver: SliverList.separated(
-                  itemCount: state.posts.length,
+                 itemCount: posts.length,
                   separatorBuilder: (_, _) => const SizedBox(height: 16),
                   itemBuilder: (context, index) {
-                    final post = state.posts[index];
+                    final post = posts[index];
                     return PostCard(
                       post: post,
                       showAuthor: false,
@@ -191,7 +211,7 @@ class _ProfileBody extends StatelessWidget {
                   },
                 ),
               ),
-            if (state.isLoadingMore)
+            if (loadingMore)
               const SliverToBoxAdapter(
                 child: Padding(
                   padding: EdgeInsets.only(bottom: 24),

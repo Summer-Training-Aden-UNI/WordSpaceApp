@@ -150,6 +150,7 @@ ProfileCubit createProfileCubit({
       getProfile: di.sl(),
       getUser: di.sl(),
       getUserPosts: di.sl(),
+      getMyDrafts: di.sl(),
       updateProfile: di.sl(),
       likePost: di.sl(),
       unlikePost: di.sl(),
