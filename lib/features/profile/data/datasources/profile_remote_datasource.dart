@@ -1,4 +1,4 @@
-import 'package:dio/dio.dart';
+import '../../../../core/network/api_consumer.dart';
 
 import '../../../../core/constants/api_constants.dart';
 import '../models/profile_model.dart';
@@ -18,13 +18,13 @@ abstract class ProfileRemoteDataSource {
 }
 
 class ProfileRemoteDataSourceImpl implements ProfileRemoteDataSource {
-  final Dio dio;
-  ProfileRemoteDataSourceImpl(this.dio);
+  final ApiConsumer api;
+  ProfileRemoteDataSourceImpl(this.api);
 
   @override
   Future<ProfileModel> getProfile() async {
-    final res = await dio.get(ApiConstants.profile);
-    return ProfileModel.fromJson(res.data as Map<String, dynamic>);
+    final res = await api.get(ApiConstants.profile);
+    return ProfileModel.fromJson(res as Map<String, dynamic>);
   }
 
  @override
@@ -45,13 +45,14 @@ class ProfileRemoteDataSourceImpl implements ProfileRemoteDataSource {
     };
 
     if (avatarPath != null && !removeAvatar) {
-      fields[_avatarField] = await MultipartFile.fromFile(avatarPath);
+      fields[_avatarField] = ApiFile(avatarPath);
     }
 
-    final res = await dio.post(
+    final res = await api.post(
       ApiConstants.profile,
-      data: FormData.fromMap(fields),
+      data: fields,
+      isFormData: true,
     );
-    return ProfileModel.fromJson(res.data as Map<String, dynamic>);
+    return ProfileModel.fromJson(res as Map<String, dynamic>);
   }
 }

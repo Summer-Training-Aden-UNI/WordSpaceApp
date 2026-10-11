@@ -1,4 +1,4 @@
-import 'package:dio/dio.dart';
+import '../../../../core/network/api_consumer.dart';
 
 import '../../../../core/constants/api_constants.dart';
 import '../models/auth_response_model.dart';
@@ -18,16 +18,16 @@ abstract class AuthRemoteDataSource {
 }
 
 class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
-  final Dio dio;
-  AuthRemoteDataSourceImpl(this.dio);
+  final ApiConsumer api;
+  AuthRemoteDataSourceImpl(this.api);
 
   @override
   Future<AuthResponseModel> login(String email, String password) async {
-    final res = await dio.post(
+    final res = await api.post(
       ApiConstants.login,
       data: {'email': email, 'password': password},
     );
-    return AuthResponseModel.fromJson(res.data as Map<String, dynamic>);
+    return AuthResponseModel.fromJson(res as Map<String, dynamic>);
   }
 
   @override
@@ -38,7 +38,7 @@ class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
     required String password,
     required String passwordConfirmation,
   }) async {
-    final res = await dio.post(
+    final res = await api.post(
       ApiConstants.register,
       data: {
         'name': name,
@@ -48,17 +48,17 @@ class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
         'password_confirmation': passwordConfirmation,
       },
     );
-    return AuthResponseModel.fromJson(res.data as Map<String, dynamic>);
+    return AuthResponseModel.fromJson(res as Map<String, dynamic>);
   }
 
   @override
   Future<void> logout() async {
-    await dio.post(ApiConstants.logout);
+    await api.post(ApiConstants.logout);
   }
 
   @override
   Future<UserModel> getCurrentUser() async {
-    final res = await dio.get(ApiConstants.user);
-    return UserModel.fromJson(res.data as Map<String, dynamic>);
+    final res = await api.get(ApiConstants.user);
+    return UserModel.fromJson(res as Map<String, dynamic>);
   }
 }
