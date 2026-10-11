@@ -1,4 +1,4 @@
-import 'package:dio/dio.dart';
+import '../../../../core/network/api_consumer.dart';
 
 import '../../../../core/constants/api_constants.dart';
 import '../../../../core/utils/json_helpers.dart';
@@ -28,25 +28,25 @@ abstract class PostRemoteDataSource {
 }
 
 class PostRemoteDataSourceImpl implements PostRemoteDataSource {
-  final Dio dio;
-  PostRemoteDataSourceImpl(this.dio);
+  final ApiConsumer api;
+  PostRemoteDataSourceImpl(this.api);
 
   @override
   Future<Paginated<PostModel>> getPosts({int page = 1, String? search}) async {
-    final res = await dio.get(
+    final res = await api.get(
       ApiConstants.posts,
       queryParameters: {
         'page': page,
         if (search != null && search.trim().isNotEmpty) 'search': search.trim(),
       },
     );
-    return Paginated.fromResponse(res.data, PostModel.fromJson);
+    return Paginated.fromResponse(res, PostModel.fromJson);
   }
 
   @override
   Future<PostModel> getPost(int id) async {
-    final res = await dio.get(ApiConstants.post(id));
-    return PostModel.fromJson(unwrap(res.data));
+    final res = await api.get(ApiConstants.post(id));
+    return PostModel.fromJson(unwrap(res));
   }
 
   @override
@@ -61,14 +61,14 @@ class PostRemoteDataSourceImpl implements PostRemoteDataSource {
       'content': body,
       'status': ?status,
     };
-    final Response res;
-    if (imagePath != null) {
-      fields[_imageField] = await MultipartFile.fromFile(imagePath);
-      res = await dio.post(ApiConstants.posts, data: FormData.fromMap(fields));
-    } else {
-      res = await dio.post(ApiConstants.posts, data: fields);
-    }
-    return PostModel.fromJson(unwrap(res.data));
+    
+    if (imagePath != null) fields[_imageField] = ApiFile(imagePath);
+    final res = await api.post(
+      ApiConstants.posts,
+      data: fields,
+      isFormData: imagePath != null,
+    );
+    return PostModel.fromJson(unwrap(res));
   }
 
   @override
@@ -85,18 +85,17 @@ class PostRemoteDataSourceImpl implements PostRemoteDataSource {
       'status': ?status,
     };
     
-    final Response res;
-    if (imagePath != null) {
-      fields[_imageField] = await MultipartFile.fromFile(imagePath);
-      res = await dio.post(ApiConstants.post(id), data: FormData.fromMap(fields));
-    } else {
-      res = await dio.post(ApiConstants.post(id), data: fields);
-    }
-    return PostModel.fromJson(unwrap(res.data));
+    
+    if (imagePath != null) fields[_imageField] = ApiFile(imagePath);
+    final res = await api.post(
+      ApiConstants.post(id),
+      data: fields,
+      isFormData: imagePath != null,
+    );
+    return PostModel.fromJson(unwrap(res));
   }
-
   @override
   Future<void> deletePost(int id) async {
-    await dio.delete(ApiConstants.post(id));
+    await api.delete(ApiConstants.post(id));
   }
 }

@@ -1,5 +1,5 @@
 import 'package:dio/dio.dart';
-
+import 'auth_interceptor.dart';
 import '../constants/api_constants.dart';
 import '../storage/token_storage.dart';
 
@@ -18,50 +18,7 @@ class DioClient {
           ),
         ) {
     dio.interceptors.add(
-      InterceptorsWrapper(
-        onRequest: (options, handler) async {
-          final token = await tokenStorage.read();
-          if (token != null) {
-            options.headers['Authorization'] = 'Bearer $token';
-          }
-          handler.next(options);
-        },
-        onError: (error, handler) async {
-          if (error.response?.statusCode == 401) {
-            await tokenStorage.clear();
-            onUnauthorized?.call();
-          }
-          handler.next(error);
-        },
-      ),
+      AuthInterceptor(tokenStorage, onUnauthorized: onUnauthorized),
     );
   }
-}
-
-abstract class ApiConsumer {
-  Future<dynamic> get(
-    String path, {
-    Object? data,
-    Map<String, dynamic>? queryParameters,
-  });
-
-  Future<dynamic> post(
-    String path, {
-    dynamic data,
-    Map<String, dynamic>? queryParameters,
-    bool isFormData = false,
-  });
-
-  Future<dynamic> patch(
-    String path, {
-    dynamic data,
-    Map<String, dynamic>? queryParameters,
-    bool isFormData = false,
-  });
-
-  Future<dynamic> delete(
-    String path, {
-    Object? data,
-    Map<String, dynamic>? queryParameters,
-  });
 }

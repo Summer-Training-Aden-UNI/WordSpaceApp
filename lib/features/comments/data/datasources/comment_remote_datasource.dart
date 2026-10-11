@@ -1,6 +1,5 @@
-import 'package:dio/dio.dart';
-
 import '../../../../core/constants/api_constants.dart';
+import '../../../../core/network/api_consumer.dart';
 import '../../../../core/utils/json_helpers.dart';
 import '../../../../core/utils/paginated.dart';
 import '../models/comment_model.dart';
@@ -15,29 +14,29 @@ abstract class CommentRemoteDataSource {
 }
 
 class CommentRemoteDataSourceImpl implements CommentRemoteDataSource {
-  final Dio dio;
-  CommentRemoteDataSourceImpl(this.dio);
+  final ApiConsumer api;
+  CommentRemoteDataSourceImpl(this.api);
 
   @override
   Future<Paginated<CommentModel>> getComments(int postId, {int page = 1}) async {
-    final res = await dio.get(
+    final res = await api.get(
       ApiConstants.postComments(postId),
       queryParameters: {'page': page},
     );
-    return Paginated.fromResponse(res.data, CommentModel.fromJson);
+    return Paginated.fromResponse(res, CommentModel.fromJson);
   }
 
   @override
   Future<CommentModel> addComment(int postId, String body) async {
-    final res = await dio.post(
+    final res = await api.post(
       ApiConstants.postComments(postId),
       data: {_bodyField: body},
     );
-    return CommentModel.fromJson(unwrap(res.data));
+    return CommentModel.fromJson(unwrap(res));
   }
 
   @override
   Future<void> deleteComment(int commentId) async {
-    await dio.delete(ApiConstants.comment(commentId));
+    await api.delete(ApiConstants.comment(commentId));
   }
 }

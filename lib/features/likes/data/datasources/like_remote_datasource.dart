@@ -1,4 +1,4 @@
-import 'package:dio/dio.dart';
+import '../../../../core/network/api_consumer.dart';
 
 import '../../../../core/constants/api_constants.dart';
 import '../../../../core/utils/paginated.dart';
@@ -12,22 +12,22 @@ abstract class LikeRemoteDataSource {
 }
 
 class LikeRemoteDataSourceImpl implements LikeRemoteDataSource {
-  final Dio dio;
-  LikeRemoteDataSourceImpl(this.dio);
+  final ApiConsumer api;
+  LikeRemoteDataSourceImpl(this.api);
 
   @override
   Future<List<PostModel>> getLikedPosts() async {
-    final res = await dio.get(ApiConstants.likedPosts);
-    return Paginated.fromResponse(res.data, PostModel.fromJson).items;
+    final res = await api.get(ApiConstants.likedPosts);
+    return Paginated.fromResponse(res, PostModel.fromJson).items;
   }
 
   @override
   Future<void> likePost(int postId) async {
-    await dio.post(ApiConstants.postLikes(postId));
+    await api.post(ApiConstants.postLikes(postId));
   }
 
   @override
   Future<void> unlikePost(int postId) async {
-    await dio.delete(ApiConstants.postLikes(postId));
+    await api.delete(ApiConstants.postLikes(postId));
   }
 }

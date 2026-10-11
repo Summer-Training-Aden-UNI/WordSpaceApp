@@ -2,6 +2,8 @@ import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:get_it/get_it.dart';
 
 import 'core/network/dio_client.dart';
+import 'core/network/api_consumer.dart';
+import 'core/network/dio_consumer.dart';
 import 'core/storage/token_storage.dart';
 
 // auth
@@ -75,11 +77,17 @@ Future<void> init() async {
   // ---- core ----
   sl.registerLazySingleton(() => const FlutterSecureStorage());
   sl.registerLazySingleton(() => TokenStorage(sl()));
-  sl.registerLazySingleton(() => DioClient(sl()));
+  sl.registerLazySingleton(
+    () => DioClient(
+      sl(),
+      onUnauthorized: () => sl<AuthCubit>().sessionExpired(),
+    ),
+  );
+  sl.registerLazySingleton<ApiConsumer>(() => DioConsumer(sl<DioClient>().dio));
 
   // ---- auth ----
   sl.registerLazySingleton<AuthRemoteDataSource>(
-    () => AuthRemoteDataSourceImpl(sl<DioClient>().dio),
+    () => AuthRemoteDataSourceImpl(sl()),
   );
   sl.registerLazySingleton<AuthRepository>(
     () => AuthRepositoryImpl(remote: sl(), tokenStorage: sl()),
@@ -98,14 +106,14 @@ Future<void> init() async {
 
   // ---- search ----
   sl.registerLazySingleton<SearchRemoteDataSource>(
-    () => SearchRemoteDataSourceImpl(sl<DioClient>().dio),
+    () => SearchRemoteDataSourceImpl(sl()),
   );
   sl.registerLazySingleton<SearchRepository>(() => SearchRepositoryImpl(sl()));
   sl.registerLazySingleton(() => Search(sl()));
 
   // ---- posts ----
   sl.registerLazySingleton<PostRemoteDataSource>(
-    () => PostRemoteDataSourceImpl(sl<DioClient>().dio),
+    () => PostRemoteDataSourceImpl(sl())
   );
   sl.registerFactory(() => CreatePostCubit(createPost: sl()));
     sl.registerFactory(() => PostsCubit(
@@ -118,8 +126,8 @@ Future<void> init() async {
   sl.registerLazySingleton(() => DeletePost(sl()));
 
   // ---- comments ----
-  sl.registerLazySingleton<CommentRemoteDataSource>(
-    () => CommentRemoteDataSourceImpl(sl<DioClient>().dio),
+    sl.registerLazySingleton<CommentRemoteDataSource>(
+    () => CommentRemoteDataSourceImpl(sl()),
   );
   sl.registerLazySingleton<CommentRepository>(() => CommentRepositoryImpl(sl()));
   sl.registerLazySingleton(() => GetComments(sl()));
@@ -128,7 +136,7 @@ Future<void> init() async {
 
   // ---- likes ----
   sl.registerLazySingleton<LikeRemoteDataSource>(
-    () => LikeRemoteDataSourceImpl(sl<DioClient>().dio),
+    () => LikeRemoteDataSourceImpl(sl()),
   );
   sl.registerLazySingleton<LikeRepository>(() => LikeRepositoryImpl(sl()));
   sl.registerLazySingleton(() => GetLikedPosts(sl()));
@@ -137,7 +145,7 @@ Future<void> init() async {
 
   // ---- follow ----
   sl.registerLazySingleton<FollowRemoteDataSource>(
-    () => FollowRemoteDataSourceImpl(sl<DioClient>().dio),
+    () => FollowRemoteDataSourceImpl(sl()),
   );
   sl.registerLazySingleton<FollowRepository>(() => FollowRepositoryImpl(sl()));
   sl.registerLazySingleton(() => SearchUsers(sl()));
@@ -153,7 +161,7 @@ Future<void> init() async {
 
   // ---- profile ----
   sl.registerLazySingleton<ProfileRemoteDataSource>(
-    () => ProfileRemoteDataSourceImpl(sl<DioClient>().dio),
+    () => ProfileRemoteDataSourceImpl(sl()),
   );
   sl.registerLazySingleton<ProfileRepository>(() => ProfileRepositoryImpl(sl()));
   sl.registerLazySingleton(() => GetProfile(sl()));
